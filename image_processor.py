@@ -40,14 +40,14 @@ def processFolder(path: str, size: int = defaultSize):
     
     
     total = len(dirs)
-    new_images = dict()
-
-    for item in tqdm(dirs,bar_format='{l_bar}{bar}| {percentage:3.0f}% {n}/{total} [{remaining}{postfix}]',desc="Resizing"):
+    new_images = np.empty((0, 224, 224, 3))
+    filenames = []
+    for item in tqdm(dirs,bar_format='{l_bar}{bar}| {percentage:3.0f}% {n}/{total} [{remaining}{postfix}]',desc="Importing"):
         if os.path.isfile(path + item):
-
-            new_images[item]= np.array(load_img(path + item , target_size=(224,224))).reshape(1,224,224,3)
+            filenames.append(path + item)
+            new_images =  np.concatenate((new_images,np.array(load_img(path + item , target_size=(224,224))).reshape(1,224,224,3)), axis = 0)
     
-    return new_images
+    return new_images , filenames
             
 
 
