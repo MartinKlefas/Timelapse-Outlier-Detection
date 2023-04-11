@@ -5,16 +5,13 @@ from tensorflow.keras.utils import load_img
 from tensorflow.keras.utils import img_to_array 
 from keras.applications.vgg16 import preprocess_input 
 
+import pathlib
+
 defaultSize = 224
 
-def validate_output_dir(path):
+def validate_output_dir(tPath : str):
     try:
-    # Check if the folder exists or not
-        if not os.path.isdir(path):
-            
-            # If not then make the new folder
-            os.mkdir(path)
-
+        pathlib.Path(tPath).mkdir(parents=True, exist_ok=True)
         return True, None
     except Exception as ex:
 
@@ -34,20 +31,17 @@ def processFolder(path: str, size: int = defaultSize):
     if not path[:-1] =="/":
         path = path + "/"
 
-    dirs = os.listdir(path)
-    final_size = size
+    objPath = pathlib.Path(path)
 
     
     
-    total = len(dirs)
-    new_images = np.empty((0, 224, 224, 3))
+    new_images = np.empty((0, size, size, 3))
     filenames = []
-    for item in tqdm(dirs,bar_format='{l_bar}{bar}| {percentage:3.0f}% {n}/{total} [{remaining}{postfix}]',desc="Importing"):
-        if os.path.isfile(path + item):
-            filenames.append(path + item)
-            new_images =  np.concatenate((new_images,np.array(load_img(path + item , target_size=(224,224))).reshape(1,224,224,3)), axis = 0)
+    files = objPath.glob('*.[jpg][png][jpeg][tiff]')
+    for item in tqdm(files,bar_format='{l_bar}{bar}| {percentage:3.0f}% {n}/{total} [{remaining}{postfix}]',desc="Importing"):
+        new_images =  np.concatenate((new_images,np.array(load_img(item , target_size=(size,size))).reshape(1,size,size,3)), axis = 0)
     
-    return new_images , filenames
+    return new_images , files
             
 
 
