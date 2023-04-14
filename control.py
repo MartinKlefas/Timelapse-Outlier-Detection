@@ -1,11 +1,11 @@
-import clustering
+import kmeans_clustering
 
 import pyarrow.feather as feather
 
 import sys,pathlib, random,shutil
 
 
-groups = clustering.cluster(rootFolder = sys.argv[1:], principal_components  = 2, clusters = 2) 
+groups = kmeans_clustering.cluster(rootFolder = sys.argv[1:], principal_components  = 2, clusters = 2) 
 
 feather.write_feather(groups,"groups.feather")
 gNumber = 0

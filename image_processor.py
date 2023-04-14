@@ -36,12 +36,14 @@ def processFolder(path: str, size: int = defaultSize):
     
     
     new_images = np.empty((0, size, size, 3))
-    filenames = []
-    files = objPath.glob('*.[jpg][png][jpeg][tiff]')
-    for item in tqdm(files,bar_format='{l_bar}{bar}| {percentage:3.0f}% {n}/{total} [{remaining}{postfix}]',desc="Importing"):
+   
+    files = objPath.glob('*.png')
+    filesList = [str(p) for p in files]
+
+    for item in tqdm(filesList,bar_format='{l_bar}{bar}| {percentage:3.0f}% {n}/{total} [{remaining}{postfix}]',desc="Importing"):
         new_images =  np.concatenate((new_images,np.array(load_img(item , target_size=(size,size))).reshape(1,size,size,3)), axis = 0)
     
-    return new_images , files
+    return new_images , filesList
             
 
 
