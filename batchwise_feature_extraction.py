@@ -1,15 +1,27 @@
 import numpy as np
 from tqdm import tqdm
 
-import kmeans_preprocessor
+import kmeans_preprocessor, disk_test
 
 from keras.applications.vgg16 import VGG16 
 from keras.models import Model
 from keras.applications.vgg16 import preprocess_input 
 
 from concurrent.futures import ThreadPoolExecutor
+from itertools import islice
 
 import pathlib, gc, pickle, sys, uuid
+
+def get_yes_no_input(question):
+    while True:
+        response = input(f"{question}? (Y/n) ").lower().strip()
+        if response == '' or response == 'y' or response == 'yes':
+            return True
+        elif response == 'n' or response == 'no':
+            return False
+        else:
+            print("Invalid input. Please enter 'Y', 'N', or leave empty for default (Y).")
+
 
 def feat_current(folder : pathlib.Path, imagePattern : str):
     files = folder.rglob(imagePattern)
@@ -34,6 +46,13 @@ def batches_current(folder : pathlib.Path, imagePattern : str):
 
 
 def feat_extract(rootFolder : pathlib.Path = pathlib.Path("/"), imagePattern : str = "*s.png"):
+    diskInfo = disk_test.get_drive_info(Path=rootFolder)
+    if diskInfo["InterfaceType"] == "USB":
+        print("You appear to have selected a USB drive. Initialising the progress metrics can take a long time for some USB drives.")
+        forceBar = not get_yes_no_input("Would you like to skip this to speed things up")
+    else:
+        forceBar = True
+
 
     new_pickles_folder = pathlib.Path(rootFolder / "pickles" / str(uuid.uuid4()) / "")
     new_pickles_folder.mkdir(parents=True, exist_ok=True)
@@ -43,11 +62,7 @@ def feat_extract(rootFolder : pathlib.Path = pathlib.Path("/"), imagePattern : s
     print("finding files")
     files = rootFolder.rglob(imagePattern)
 
-    # we again need to use our ugly hack to do a progress bar, this time though we need a list of strings for cv2 to be able to open them
-    fileNames = [str(p) for p in files]
-
-    batch_size = 2000
-    num_batches = int(np.ceil(len(fileNames) / batch_size))
+    
 
     
     print("loading progress")
@@ -81,15 +96,36 @@ def feat_extract(rootFolder : pathlib.Path = pathlib.Path("/"), imagePattern : s
         doneFilenames = set(doneFilenames)
         print(f"loaded progress for {len(doneFilenames)} files")
         
+    batch_size = 2000
+
+    if forceBar:
+         # we again need to use our ugly hack to do a progress bar, this time though we need a list of strings for cv2 to be able to open them
+        fileNames = [str(p) for p in files]
+        num_batches = int(np.ceil(len(fileNames) / batch_size))
+    else:
+         num_batches = 1e20 # we don't know how many files there are, so we don't know how many batches there will be.
+
+   
     
+    keepGoing = True
+    i=0
+    while keepGoing: #tqdm(range(num_batches),desc="Processing image batches"):
+            if num_batches != 1e20:
+                print(f"Batch {i+1} of {num_batches+1}")
+            else:
+                print(f"Batch {i+1}")
 
-
-    for i in range(num_batches): #tqdm(range(num_batches),desc="Processing image batches"):
-            print(f"Batch {i+1} of {num_batches+1}")
             start = i * batch_size
             end = (i + 1) * batch_size
 
-            batch_fileNames = fileNames[start:end]
+            if forceBar:
+                batch_fileNames = fileNames[start:end]
+            else:
+                batch_fileNames = [str(p) for p in islice(files, batch_size)]
+
+            if batch_fileNames < batch_size:
+                 keepGoing = False # if the generator or list is exhaused, this will be the last loop
+
             if len(doneFilenames) > 0:
                 batch_fileNames = [filename for filename in batch_fileNames if filename not in doneFilenames]
 
@@ -115,6 +151,8 @@ def feat_extract(rootFolder : pathlib.Path = pathlib.Path("/"), imagePattern : s
                     pickle.dump(batch_fileNames, handle, protocol=pickle.HIGHEST_PROTOCOL)
                 
                 features.append(batch_features.reshape(-1, 4096))   
+            
+            i=i+1
 
     print("concatenating features")
     features = np.concatenate(features, axis=0)
