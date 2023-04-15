@@ -65,7 +65,7 @@ def feat_extract(rootFolder : pathlib.Path = pathlib.Path("/"), imagePattern : s
     
 
     
-    print("loading progress")
+    print("loading prior progress")
     if pathlib.Path(rootFolder / "features_all.pickle").exists() and not feat_current(rootFolder):
           print("Everything seems to be up to date. Bye!")
           sys.exit()
@@ -73,7 +73,11 @@ def feat_extract(rootFolder : pathlib.Path = pathlib.Path("/"), imagePattern : s
     doneFilenames = []
     features = []
 
-    if pathlib.Path(rootFolder / "features_batch_1.pickle").exists() and batches_current(rootFolder):
+    features_pickles = rootFolder.rglob('features_batch_*.pickle')
+    list_of_pickles =  [str(p) for p in features_pickles] # this should be a relatively short list, so it shouldn't cause the same impact as "listing" the image files from the generator
+
+    if len(list_of_pickles) > 0 and (not forceBar or batches_current(rootFolder)): # the batches_current feature scans all files and folders for any updates after the pickle.
+        #this would take a long time on usb/spinning disks/etc so we follow the same rule as the progress bar, hoping it'll be ok.
         print("reading old progress")
         feat_pickles = rootFolder.rglob('features*.pickle')
 
@@ -123,7 +127,7 @@ def feat_extract(rootFolder : pathlib.Path = pathlib.Path("/"), imagePattern : s
             else:
                 batch_fileNames = [str(p) for p in islice(files, batch_size)]
 
-            if batch_fileNames < batch_size:
+            if len(batch_fileNames) < batch_size:
                  keepGoing = False # if the generator or list is exhaused, this will be the last loop
 
             if len(doneFilenames) > 0:
@@ -133,6 +137,7 @@ def feat_extract(rootFolder : pathlib.Path = pathlib.Path("/"), imagePattern : s
                 with ThreadPoolExecutor() as executor:
                     images = list(executor.map(kmeans_preprocessor.cvload_image, batch_fileNames, [224]*len(batch_fileNames)))
 
+                images = [img for img in images if img is not None]
                 #print("Concatenating")
                 images = np.concatenate(images, axis=0)
                 

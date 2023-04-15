@@ -74,9 +74,14 @@ def processFolder(objPath : pathlib.Path = None, strPath: str ="", size: int = d
 
 
 def cvload_image(file, size):
+  try:
     img = cv2.imread(file)
+    if img is None:
+            return None
     img = cv2.resize(img, (size, size))
     return img.reshape(1, size, size, 3)
+  except Exception as e:
+    return None 
 
 
 def fullPreProcess_Image(filePath: str):
