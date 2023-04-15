@@ -1,4 +1,4 @@
-import subprocess
+import subprocess,re,pathlib
 
 import win32com.client
 
@@ -21,29 +21,37 @@ def get_drive_mappings():
 disk_drive_process = subprocess.run('wmic diskdrive get DeviceID, Model, MediaType, InterfaceType',
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
 
-# Execute the 'wmic' command and store the output for logical disks
-#logical_disk_process = subprocess.run('wmic logicaldisk get DeviceID, DriveType, FileSystem, FreeSpace, Size, VolumeName',
-#                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
 
 # Check if there are any error messages
 if disk_drive_process.stderr:
     print(f"Disk Drive Error: {disk_drive_process.stderr}")
-#elif logical_disk_process.stderr:
-#    print(f"Logical Disk Error: {logical_disk_process.stderr}")
+
 else:
-    # Print the output for disk drives
-    print("Disk Drives:")
-    print(disk_drive_process.stdout)
-
-    # Print the output for logical disks
-#    print("Logical Disks:")
-#    print(logical_disk_process.stdout)
-
-
+    # parse disk drive informaiton
+    lines = disk_drive_process.stdout.strip().split('\n')
+    
+    header = [col.strip() for col in re.split(r" {2,}",lines[0])]
+    
+    disk_drive_info = {}
+    for line in lines[1:]:
+        if len(line.strip()) >0 :
+            values = [value.strip() for value in re.split(r" {2,}",line)]
+            values[0] = str(values[0]).replace("\\", "").replace(".","")
+            disk_drive_info[values[0]] = dict(zip(header[1:], values[1:]))
 
 
 drive_mappings = get_drive_mappings()
-
+drive_letter_info = {}
 # Print the disk drive to drive letter mappings
 for drive_letter, disk_drive in drive_mappings.items():
-    print(f"{drive_letter} -> {disk_drive}")
+
+    trimmed_drive = re.search(r"PHYSICALDRIVE\d+", disk_drive).group(0)
+    
+    drive_letter_info[drive_letter] = disk_drive_info[trimmed_drive]
+
+def get_drive_info(drive : str = "", Path : pathlib.Path = None):
+    if Path :
+        drive = str(Path.drive)
+
+    drive = drive.replace(":","")
+    return drive_letter_info[drive]
