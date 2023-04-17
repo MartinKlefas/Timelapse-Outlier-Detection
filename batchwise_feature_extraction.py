@@ -12,6 +12,8 @@ from itertools import islice
 
 import pathlib, gc, pickle, sys, uuid
 
+import time
+
 def get_yes_no_input(question):
     while True:
         response = input(f"{question}? (Y/n) ").lower().strip()
@@ -134,20 +136,25 @@ def feat_extract(rootFolder : pathlib.Path = pathlib.Path("/"), imagePattern : s
                 batch_fileNames = [filename for filename in batch_fileNames if filename not in doneFilenames]
 
             if len(batch_fileNames) > 0:
+                start_load = time.perf_counter()
                 with ThreadPoolExecutor() as executor:
                     images = list(executor.map(kmeans_preprocessor.cvload_image, batch_fileNames, [224]*len(batch_fileNames)))
 
                 images = [img for img in images if img is not None]
                 #print("Concatenating")
                 images = np.concatenate(images, axis=0)
+                fin_load = time.perf_counter()
                 
                 #print("Pre-procssing")
                 x = preprocess_input(images)
                 del images
                 gc.collect()
+                fin_preprocess = time.perf_counter()
 
                 #print("extracting features")
                 batch_features = model_ft.predict(x, use_multiprocessing=True, verbose=1)
+
+                fin_modelling = time.perf_counter()
                 
                 with open(str(new_pickles_folder/ f"features_batch_{i}.pickle"), 'wb') as handle:
                     pickle.dump(batch_features, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -156,7 +163,7 @@ def feat_extract(rootFolder : pathlib.Path = pathlib.Path("/"), imagePattern : s
                     pickle.dump(batch_fileNames, handle, protocol=pickle.HIGHEST_PROTOCOL)
                 
                 features.append(batch_features.reshape(-1, 4096))   
-            
+                print(f"Timings:\n Load:  {fin_load- start_load:0.4f}\n Prep:  {fin_preprocess- fin_load:0.4f}\n Model: {fin_modelling - fin_preprocess:0.4f}")
             i=i+1
 
     print("concatenating features")

@@ -130,3 +130,9 @@ dmypy.json
 
 # test folder
 test/
+
+# local cached files
+features/
+
+# pre-computed graphs don't need to be on github
+plots/
