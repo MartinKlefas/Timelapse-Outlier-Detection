@@ -8,6 +8,8 @@ from matplotlib.colors import ListedColormap
 from concurrent.futures import ThreadPoolExecutor
 from itertools import islice
 
+import pyarrow.feather as feather
+
 from datetime import datetime
 
 from sklearn.decomposition import PCA
@@ -55,12 +57,15 @@ def init(pickleFolder: pathlib.Path):
     print(f"concatenating features")
     features = np.concatenate(features_list, axis=0)
     print(f"{features.shape[0]} features loaded")
-    return features
+
+    print("Reading info on existing figures")
+    figures = feather.read_feather("plots/plots.feather")
+    return features, figures
 
 def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, alpha:float=1.4, approx_min_span_tree:bool=True,
                 gen_min_span_tree:bool=False, leaf_size: int = 40, cluster_selection_epsilon: int = 7,
                 metric : str ='manhattan', min_cluster_size:int=5,allow_single_cluster:bool=True):
-    global features
+    global features, figures
     start = time.perf_counter()
     print("starting pca")
 
@@ -126,22 +131,30 @@ def default_hdb():
     return FileResponse(path="plots/defaulthdb.png")
 
 @app.post('/customhdbscan')
-async def custom_hdb(background_tasks: BackgroundTasks):
-    global features
+async def custom_hdb(background_tasks: BackgroundTasks,principle_components : int = 2, random_state: int =22, alpha:float=1.4, approx_min_span_tree:bool=True,
+                gen_min_span_tree:bool=False, leaf_size: int = 40, cluster_selection_epsilon: int = 7,
+                metric : str ='manhattan', min_cluster_size:int=5,allow_single_cluster:bool=True):
+    global figures
+    found = False
+    if found:
+        with open("plots/defaulthdb.png", "rb") as image_file:
+            img_base64 = base64.b64encode(image_file.read())
+
+        return JSONResponse(content={"message": "success", "image": img_base64})
+    else:
+        
+
+        background_tasks.add_task(do_hdbscan_cluster,principle_components=principle_components,random_state=random_state,
+                                    alpha=alpha, approx_min_span_tree=approx_min_span_tree,gen_min_span_tree=gen_min_span_tree,
+                                    leaf_size=leaf_size,  cluster_selection_epsilon=cluster_selection_epsilon,
+                                    metric=metric, min_cluster_size=min_cluster_size, 
+                                    allow_single_cluster=allow_single_cluster)
     
-    
-    fig, ax = do_hdbscan_cluster()
-    buffer = io.BytesIO()
-    fig.savefig(buffer, format='png')
-    buffer.seek(0)
-    img_base64 = base64.b64encode(buffer.getvalue()).decode()
-
-    background_tasks.add_task(remove_file, path)
-    return JSONResponse(content={"image": img_base64})
+        return JSONResponse(content={"message": "please wait", "wait_time": "90 seconds"})
 
 
 
-features = init(pathlib.Path("features/"))
+features, figures = init(pathlib.Path("features/"))
 
 if __name__ == '__main__':
   uvicorn.run("clustering_api:app", host="0.0.0.0", port=8080, timeout_keep_alive=120)
