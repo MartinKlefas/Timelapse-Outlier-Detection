@@ -12,7 +12,7 @@ from datetime import datetime
 
 from sklearn.decomposition import PCA
 
-import pathlib, os, pickle, time, base64, io
+import pathlib, os, pickle, time, base64, io,sys
 
 #from cuml.cluster import hdbscan
 import hdbscan
@@ -26,6 +26,12 @@ from fastapi.responses import JSONResponse
 from fastapi.responses import FileResponse
 
 from starlette.background import BackgroundTasks
+
+import asyncio
+if sys.platform.startswith("win"):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+from fastapi.middleware.cors import CORSMiddleware
 
 
 
@@ -96,21 +102,28 @@ app = FastAPI()
 print("Starting server")
 start_time = datetime.now()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get('/healthcheck')
 def healthcheck():
   timediff = datetime.now() - start_time
 
 
-  msg = "API has been running for " + str(timediff )
+  msg = f"API has been running for {str(timediff )}, and is clustering info on {features.shape[0]} images."
   
   return {"message": msg}
 
 @app.post('/defaulthdbscan')
-async def default_hdb():
+def default_hdb():
     
 
-    return FileResponse("plots/defaulthdb.png")
+    return FileResponse(path="plots/defaulthdb.png")
 
 @app.post('/customhdbscan')
 async def custom_hdb(background_tasks: BackgroundTasks):

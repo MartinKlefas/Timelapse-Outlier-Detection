@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Request to FastAPI</title>
+    <script>
+        async function submitRequest() {
+            const response = await fetch('http://localhost:8080/defaulthdbscan', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'image/png'
+                }
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const imgURL = URL.createObjectURL(blob);
+                document.getElementById("outputImage").src = imgURL;
+            } else {
+                alert("Error: " + response.status);
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Submit Request to FastAPI</h1>
+    <h2>Now base64!</h2>
+    <button onclick="submitRequest()">Submit Request</button>
+    <div>
+        <h2>Output Image:</h2>
+        <img id="outputImage" src="" alt="Output image will be displayed here." />
+    </div>
+</body>
+</html>
