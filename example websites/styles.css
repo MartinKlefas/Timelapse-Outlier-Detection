@@ -1,0 +1,36 @@
+select {
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa;
+}
+.header {
+    background-color: #343a40;
+    padding: 20px;
+    text-align: center;
+}
+.header h1 {
+    color: white;
+}
+.container {
+    padding: 20px;
+}
+#preference-score {
+    width: 80px;
+}
+.back-link {
+    font-size: 14px;
+    padding: 10px;
+    text-align: left;
+}
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-gap: 15px;
+}
+.image-grid img {
+    max-width: 120px;
+    max-height: 120px;
+}

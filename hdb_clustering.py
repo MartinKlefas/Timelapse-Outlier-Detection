@@ -8,11 +8,13 @@ from matplotlib.colors import ListedColormap
 from concurrent.futures import ThreadPoolExecutor
 from itertools import islice
 
-
+import pandas as pd
 
 from sklearn.decomposition import PCA
 
 import pathlib, gc, pickle, sys, uuid
+
+import pyarrow.feather as feather
 
 import hdbscan
 
@@ -73,5 +75,11 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
 init(pathlib.Path("features/"))
 
 fig, ax = do_hdbscan_cluster()
+filename = "plots/defaulthdb.png"
+plt.savefig(filename)
 
-plt.savefig("plots/defaulthdb.png")
+d= {"filename":filename,"principle_components" : 2, "random_state" : 22, "alpha":1.4, "approx_min_span_tree":True,
+               "gen_min_span_tree": False, "leaf_size" : 40, "cluster_selection_epsilon" : 1,
+                "metric":'manhattan', "min_cluster_size":5,"allow_single_cluster":True}
+df = pd.DataFrame(data=d,index=[0])
+feather.write_feather(df=df,dest="plots/plots.feather")
