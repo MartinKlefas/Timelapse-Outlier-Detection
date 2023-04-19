@@ -21,11 +21,11 @@ if __name__ == '__main__':
     info('main line')
     
     p = Process(target=f, args=('bob',))
-    q = Process(target=g, args=('bob',))
+    q = Process(target=g, args=('jon',))
     p.start()
     q.start()
     print("waiting")
     p.join()
     print("still waiting")
     q.join()
-    print("done waiting")
+    print("done waiting") 

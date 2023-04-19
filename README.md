@@ -32,9 +32,11 @@ I implemented two approaches to handle large-scale test data:
 
 1.  **Frequent saving:** In [batchwise_feature_extraction.py](batchwise_feature_extraction.py), I divided the input dataset into batches sized to fit into 8-10GB of VRAM and saved the resulting encoding as a pickle file after each batch.
     
-2.  **Parallel Workers:** I designed a parallel worker implementation to minimize downtime for any resource, which is still under development. The logic for this implementation is shown below
+2.  **Parallel Workers:** I designed a parallel worker implementation to minimize downtime for any resource, which is still under development. The logic for this implementation is shown below:
 
-  
+![Process flow diagram for the parallel scheme](Parallel_Flow.png)
+
+The parallel scheme here is intended to maximise resource utilisation ensuring that the disk connection (red), CPU (green) and GPU (blue) are all idle for as little time as possible - no matter which part of the process ends up being the bottleneck. 
 
 ## Stage 4: Clustering with API
 
