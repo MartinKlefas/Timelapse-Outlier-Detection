@@ -6,9 +6,10 @@ import pathlib, gc, pickle, sys, uuid
 
 from itertools import islice
 
-import initialise, file_move,pre_process
+import initialise, file_move,pre_process,extract
 
 imagePath = pathlib.Path("Y:/Allotment Timelapse")
+imagePattern = "*.jpg"
 forceBar = initialise.diskTesting(imagePath)
 result_queue = Queue()
 
@@ -21,9 +22,9 @@ for directory in [x for x in imagePath.iterdir() if x.is_dir()]:
           print("Everything seems to be up to date. Bye!")
           sys.exit()
 
-    new_pickles_folder, model_ft, files = initialise.setup_vars(root_folder=directory, imagePattern="*.jpg")
+    new_pickles_folder, model_ft, files = initialise.setup_vars(root_folder=directory, imagePattern=imagePattern)
 
-    doneFilenames, batch_size = initialise.get_progress(root_folder=directory, imagePattern="*.jpg",forceBar=forceBar)
+    doneFilenames, batch_size = initialise.get_progress(root_folder=directory, imagePattern=imagePattern,forceBar=forceBar)
 
     if forceBar:
          # we again need to use our ugly hack to do a progress bar, this time though we need a list of strings for cv2 to be able to open them
@@ -36,6 +37,10 @@ for directory in [x for x in imagePath.iterdir() if x.is_dir()]:
     
     keepGoing = True
     i=0
+    preProcessedImages = None
+    oldBatchFileNames = None
+    veryOldBatchFileNames = None
+
     while keepGoing: #tqdm(range(num_batches),desc="Processing image batches"):
             if num_batches != 1e20:
                 print(f"Batch {i+1} of {num_batches+1}")
@@ -53,10 +58,26 @@ for directory in [x for x in imagePath.iterdir() if x.is_dir()]:
             #initialise threads
             mover = Process(target=file_move.move_batch, args=(batch_fileNames,fastCacheFolder))
 
-            preprocessor = Process(target=pre_process.pre_process, args=(fastCacheFolder,result_queue))
+            preprocessor = Process(target=pre_process.pre_process, args=(fastCacheFolder,imagePattern,result_queue))
 
-            extractor = Process(target=f, args=('bob',))    
+            extractor = Process(target=extract.features_extract, args=(preProcessedImages,model_ft, new_pickles_folder,veryOldBatchFileNames,i-2))    
             
             #start jobs
+            #start them in reverse order, so that the first worker gets two ahead as intended before the last one starts...
+            extractor.start()
+            preprocessor.start()
+            mover.start()
+
             #join
-            #write outputs
+            extractor.join()
+            preprocessor.join()
+            mover.join()
+
+
+            preProcessedImages = result_queue.get()
+
+            #cycle the filenames back two places - so that we pass the right names out to be logged
+            veryOldBatchFileNames = oldBatchFileNames
+            oldBatchFileNames = batch_fileNames
+
+            

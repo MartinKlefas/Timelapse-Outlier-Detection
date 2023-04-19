@@ -16,6 +16,7 @@ def g(name):
     info('function g')
     time.sleep(2)
     print('hello again', name)
+    return "I ran!"
 
 if __name__ == '__main__':
     info('main line')
