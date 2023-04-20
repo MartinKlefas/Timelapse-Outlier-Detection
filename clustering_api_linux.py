@@ -210,5 +210,5 @@ async def custom_hdb(background_tasks: BackgroundTasks, params: HDBSCANParams):
 features = init(pathlib.Path("features/"))
 
 if __name__ == '__main__':
-  uvicorn.run("clustering_api:app", host="0.0.0.0", port=8080, timeout_keep_alive=120)
+  uvicorn.run("clustering_api_linux:app", host="0.0.0.0", port=8080, timeout_keep_alive=120)
   
