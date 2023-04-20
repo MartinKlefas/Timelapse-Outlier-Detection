@@ -48,7 +48,7 @@ class HDBSCANParams(BaseModel):
     approx_min_span_tree: bool = True
     gen_min_span_tree: bool = False
     leaf_size: int = 40
-    cluster_selection_epsilon: int = 1
+    cluster_selection_epsilon: float = 1
     metric: str = 'manhattan'
     min_cluster_size: int = 5
     allow_single_cluster: bool = True
@@ -78,7 +78,7 @@ def init(pickleFolder: pathlib.Path):
     return features
 
 def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, alpha:float=1.4, approx_min_span_tree:bool=True,
-                gen_min_span_tree:bool=False, leaf_size: int = 40, cluster_selection_epsilon: int = 1,
+                gen_min_span_tree:bool=False, leaf_size: int = 40, cluster_selection_epsilon: float = 1,
                 metric : str ='manhattan', min_cluster_size:int=5,allow_single_cluster:bool=True):
     global features
     figures = feather.read_feather("plots/plots.feather")
@@ -127,12 +127,13 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
     feather.write_feather(df=figures,dest="plots/plots.feather")
 
 def already_done(principle_components : int = 2, random_state: int =22, alpha:float=1.4, approx_min_span_tree:bool=True,
-                gen_min_span_tree:bool=False, leaf_size: int = 40, cluster_selection_epsilon: int = 1,
+                gen_min_span_tree:bool=False, leaf_size: int = 40, cluster_selection_epsilon: float = 1,
                 metric : str ='manhattan', min_cluster_size:int=5,allow_single_cluster:bool=True):
     
-    figures = feather.read_feather("plots/plots.feather")
+    try:
+        figures = feather.read_feather("plots/plots.feather")
     
-    results = figures.loc[(figures['principle_components'] == principle_components) & 
+        results = figures.loc[(figures['principle_components'] == principle_components) & 
                             (figures['random_state'] == random_state) & 
                             (figures['alpha'] == alpha) & 
                             (figures['approx_min_span_tree'] == approx_min_span_tree) & 
@@ -144,7 +145,10 @@ def already_done(principle_components : int = 2, random_state: int =22, alpha:fl
                             (figures['allow_single_cluster'] == allow_single_cluster)  
                             ,
                     ['filename']]
-   
+    except:
+        results = None
+
+
     return results
 
 app = FastAPI()
