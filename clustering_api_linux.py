@@ -48,7 +48,7 @@ class HDBSCANParams(BaseModel):
     approx_min_span_tree: bool = True
     gen_min_span_tree: bool = False
     leaf_size: int = 40
-    cluster_selection_epsilon: float = 1
+    cluster_selection_epsilon: float = 1.0
     metric: str = 'manhattan'
     min_cluster_size: int = 5
     allow_single_cluster: bool = True
@@ -78,11 +78,14 @@ def init(pickleFolder: pathlib.Path):
     return features
 
 def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, alpha:float=1.4, approx_min_span_tree:bool=True,
-                gen_min_span_tree:bool=False, leaf_size: int = 40, cluster_selection_epsilon: float = 1,
+                gen_min_span_tree:bool=False, leaf_size: int = 40, cluster_selection_epsilon: float = 1.0,
                 metric : str ='manhattan', min_cluster_size:int=5,allow_single_cluster:bool=True):
     global features
-    figures = feather.read_feather("plots/plots.feather")
-    
+    try:
+        figures = feather.read_feather("plots/plots.feather")
+    except:
+        figures = None
+
     start = time.perf_counter()
     print("starting pca")
 
@@ -103,15 +106,23 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
     # Create a colormap with the same number of colors as the unique labels
     cmap = ListedColormap(plt.cm.rainbow(np.linspace(0, 1, len(unique_labels))))
 
-    fig, ax = plt.subplots()
-
-    sc = ax.scatter(x[:, 0], x[:, 1], c=clusterer.labels_, cmap=cmap)
+    
+    if principle_components <= 2:
+        fig, (ax, lax) = plt.subplots(ncols=2,gridspec_kw={"width_ratios":[4, 1]})
+        sc = ax.scatter(x[:, 0], x[:, 1], c=clusterer.labels_, cmap=cmap)
+    else:
+        fig, (ax, lax) = plt.subplots(ncols=2, subplot_kw={'projection': "3d"},gridspec_kw={"width_ratios":[4, 1]})
+        sc = ax.scatter(x[:, 0], x[:, 1],x[:,2], c=clusterer.labels_, cmap=cmap)
 
     # Create a legend using the unique labels and corresponding colors from the colormap
     handles = [plt.Line2D([], [], linestyle='', marker='o', markersize=2, color=cmap(i), label=f'Cluster {label}') for i, label in enumerate(unique_labels)]
-    ax.legend(handles=handles)
+    lax.legend(handles=handles)
+    lax.axis("off")
+
+    
 
     ax.set_title("HDBSCAN Clustering")
+    plt.tight_layout()
     print("returning")
     fin = time.perf_counter()
     print(f"Timings:\n tot:  {fin- start:0.4f}\nPCA:  {start_cluster-start}\nfit:  {start_plot-start_cluster}\nplot: {fin-start_plot}")
@@ -122,12 +133,15 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
                "gen_min_span_tree": gen_min_span_tree, "leaf_size" : leaf_size, "cluster_selection_epsilon" : cluster_selection_epsilon,
                 "metric": metric, "min_cluster_size":min_cluster_size,"allow_single_cluster":allow_single_cluster}
     df_dictionary = pd.DataFrame([d],index=[0])
-    figures = pd.concat([figures,df_dictionary], ignore_index=True)
+    if not (figures is None):
+        figures = pd.concat([figures,df_dictionary], ignore_index=True)
+    else:
+        figures = df_dictionary
 
     feather.write_feather(df=figures,dest="plots/plots.feather")
 
 def already_done(principle_components : int = 2, random_state: int =22, alpha:float=1.4, approx_min_span_tree:bool=True,
-                gen_min_span_tree:bool=False, leaf_size: int = 40, cluster_selection_epsilon: float = 1,
+                gen_min_span_tree:bool=False, leaf_size: int = 40, cluster_selection_epsilon: float = 1.0,
                 metric : str ='manhattan', min_cluster_size:int=5,allow_single_cluster:bool=True):
     
     try:
@@ -187,7 +201,7 @@ async def custom_hdb(background_tasks: BackgroundTasks, params: HDBSCANParams):
                                     leaf_size=params.leaf_size,  cluster_selection_epsilon=params.cluster_selection_epsilon,
                                     metric=params.metric, min_cluster_size=params.min_cluster_size, 
                                     allow_single_cluster=params.allow_single_cluster)
-    if len(found) > 0:
+    if not (found is None) and len(found) > 0:
         print("returning image")
        
         with open(found["filename"].to_string(index=False), "rb") as image_file:
