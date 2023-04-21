@@ -18,7 +18,7 @@ from datetime import datetime
 
 from sklearn.decomposition import PCA
 
-import pathlib, os, pickle, time, base64, uuid,sys
+import pathlib, os, pickle, time, base64, uuid,sys, itertools
 
 from cuml.cluster import hdbscan
 #import hdbscan
@@ -60,6 +60,10 @@ def load_pickle(thisPickle):
     with open(str(thisPickle), 'rb') as handle:
         batch_features = pickle.load(handle)
     return batch_features.reshape(-1, 4096)
+def load_pickle_list(thisPickle):
+    with open(str(thisPickle), 'rb') as handle:
+        batch_elems = pickle.load(handle)
+    return batch_elems
 
 def init(pickleFolder: pathlib.Path):
     print("Reading Features")
@@ -77,6 +81,17 @@ def init(pickleFolder: pathlib.Path):
     
     return features
 
+def readFileNames(pickleFolder: pathlib.Path):
+    print("Reading FileNames")
+
+    feat_pickles = pickleFolder.rglob('filenames*.pickle')
+    list_of_pickles =  [str(p) for p in feat_pickles]
+
+    with ThreadPoolExecutor() as executor:
+        filesList = list(itertools.chain.from_iterable(list(executor.map(load_pickle_list, list_of_pickles))))
+    
+    return filesList
+
 def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, alpha:float=1.4, approx_min_span_tree:bool=True,
                 gen_min_span_tree:bool=False, leaf_size: int = 40, cluster_selection_epsilon: float = 1.0,
                 metric : str ='manhattan', min_cluster_size:int=5,allow_single_cluster:bool=True):
@@ -86,7 +101,7 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
     except:
         figures = None
 
-    start = time.perf_counter()
+    #start = time.perf_counter()
     print("starting pca")
 
     pca = PCA(n_components=principle_components, random_state=random_state)
@@ -96,10 +111,10 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
     clusterer = hdbscan.HDBSCAN(algorithm='boruvka_kdtree', alpha=alpha, approx_min_span_tree=approx_min_span_tree,
     gen_min_span_tree=gen_min_span_tree, leaf_size=leaf_size, cluster_selection_epsilon=cluster_selection_epsilon,
     metric=metric, min_cluster_size=min_cluster_size, min_samples=None, p=None,allow_single_cluster=allow_single_cluster)
-    start_cluster = time.perf_counter()
+    #start_cluster = time.perf_counter()
     print("starting clusterer")
     clusterer.fit(x)
-    start_plot = time.perf_counter()
+
     print("plotting")
     unique_labels = np.unique(clusterer.labels_)
 
@@ -124,8 +139,8 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
     ax.set_title("HDBSCAN Clustering")
     plt.tight_layout()
     print("returning")
-    fin = time.perf_counter()
-    print(f"Timings:\n tot:  {fin- start:0.4f}\nPCA:  {start_cluster-start}\nfit:  {start_plot-start_cluster}\nplot: {fin-start_plot}")
+   # fin = time.perf_counter()
+   # print(f"Timings:\n tot:  {fin- start:0.4f}\nPCA:  {start_cluster-start}\nfit:  {start_plot-start_cluster}\nplot: {fin-start_plot}")
     filename = "plots/" + str(uuid.uuid4()) + ".png"
     plt.savefig(filename)
 
@@ -165,6 +180,37 @@ def already_done(principle_components : int = 2, random_state: int =22, alpha:fl
 
     return results
 
+def getGroups(filenames,principle_components : int = 2, random_state: int =22, alpha:float=1.4, approx_min_span_tree:bool=True,
+                gen_min_span_tree:bool=False, leaf_size: int = 40, cluster_selection_epsilon: float = 1.0,
+                metric : str ='manhattan', min_cluster_size:int=5,allow_single_cluster:bool=True):
+   
+    #start = time.perf_counter()
+    print("starting pca")
+
+    pca = PCA(n_components=principle_components, random_state=random_state)
+    pca.fit(features)
+    x = pca.transform(features)
+    
+    clusterer = hdbscan.HDBSCAN(algorithm='boruvka_kdtree', alpha=alpha, approx_min_span_tree=approx_min_span_tree,
+    gen_min_span_tree=gen_min_span_tree, leaf_size=leaf_size, cluster_selection_epsilon=cluster_selection_epsilon,
+    metric=metric, min_cluster_size=min_cluster_size, min_samples=None, p=None,allow_single_cluster=allow_single_cluster)
+    #start_cluster = time.perf_counter()
+    print("starting clusterer")
+    clusterer.fit(x)    
+
+
+
+
+    groups = {}
+    for file, cluster in zip(filenames,clusterer.labels_):
+        if cluster not in groups.keys():
+            groups[cluster] = []
+            groups[cluster].append(file)
+        else:
+            groups[cluster].append(file)
+
+    return groups
+
 app = FastAPI()
 print("Starting server")
 start_time = datetime.now()
@@ -191,6 +237,25 @@ def default_hdb():
     
 
     return FileResponse(path="plots/defaulthdb.png")
+
+def remove_file(path: str) -> None:
+    os.unlink(path)
+
+@app.post('/cHdbscanGrp')
+async def custom_hdb(background_tasks: BackgroundTasks,params: HDBSCANParams):
+    global fileNames
+    groups = getGroups(fileNames, principle_components=params.principle_components,random_state=params.random_state,
+                                    alpha=params.alpha, approx_min_span_tree=params.approx_min_span_tree,gen_min_span_tree=params.gen_min_span_tree,
+                                    leaf_size=params.leaf_size,  cluster_selection_epsilon=params.cluster_selection_epsilon,
+                                    metric=params.metric, min_cluster_size=params.min_cluster_size, 
+                                    allow_single_cluster=params.allow_single_cluster)
+    with open("groupPickle.pickle","wb") as pickleFile:
+        pickle.dump(groups,pickleFile)
+    
+    background_tasks.add_task(remove_file, "groupPickle.pickle")
+
+    return FileResponse(path="groupPickle.pickle")
+
 
 @app.post('/customhdbscan')
 async def custom_hdb(background_tasks: BackgroundTasks, params: HDBSCANParams):
@@ -222,6 +287,7 @@ async def custom_hdb(background_tasks: BackgroundTasks, params: HDBSCANParams):
 
 
 features = init(pathlib.Path("features/"))
+fileNames = readFileNames(pathlib.Path("features/"))
 
 if __name__ == '__main__':
   uvicorn.run("clustering_api_linux:app", host="0.0.0.0", port=8080, timeout_keep_alive=120)
