@@ -40,14 +40,15 @@ The parallel scheme here is intended to maximise resource utilisation ensuring t
 
 ## Stage 4: Clustering with API
 
-With a large number of realistic images now encoded, I implemented clustering based on Stage 2 in [hdb_clustering.py](hdb_clustering.py) and then [clustering_api.py](clustering_api.py), enabling it to run under uvicorn and RapidAPI. Users can tIak parameters, and the feature encodings can be updated over time.
-
+With a large number of realistic images now encoded, I implemented clustering based on Stage 2 in [hdb_clustering.py](hdb_clustering.py) and then [clustering_api.py](clustering_api.py), enabling it to run under uvicorn and RapidAPI. Users can tweak parameters, and the feature encodings can be updated over time. An implementation for linux machines which are able to use Rapids.ai GPU based HDBSCAN is [here](clustering_api_linux.py)
   
 
-This code is still under development, but at present the clustering process itself takes too long for many API callers, and thus it has been implemented as a background process. The user request is first sorted into ones that have been computed already (either as standard or by another user) and then either known results are returned, or the result is computed in the backend to be returned next time. This is a bit of a hacky method to get around the lack of GPU compatible clustering code for windows machines, and the lack of budget to rent a GPU enabled linux machine from a cloud provider. In a real implementation I'd be using [cUML Clustering from Rapids.ai](https://developer.nvidia.com/blog/faster-hdbscan-soft-clustering-with-rapids-cuml/) to run the clustering in milliseconds rather than minutes.
+GPU accelleration of HDBSCAN clustering is in its' infancy, and so even with GPU acceleration the clustering process itself takes too long for many API callers. To sidestep this limitation it has been implemented as a background process. The user request is first sorted into ones that have been computed already or ones that need computing now. Then known results are returned as an image, other results are computed in the backend to be returned next time they're requested.
+
+This is a bit of a hacky method, In a real implementation I'd be using [cUML Clustering from Rapids.ai](https://developer.nvidia.com/blog/faster-hdbscan-soft-clustering-with-rapids-cuml/) to run the clustering on a more modern GPU in seconds rather than minutes.
 
   
-
+The final part of this stage, yet to be implemented, is to output the group details for a given clustering setup.
 
 ## Stage 5: Interactivity and Visualization
 
