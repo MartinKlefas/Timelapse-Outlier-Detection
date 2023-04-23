@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <title>Custom HDBSCAN</title>
+</head>
+<body>
+    <div class="header">
+        <h1>Martin Klefas-Stennett | Machine Learning Engineer</h1>
+    </div>
+    <div class="back-link">
+        <a href="index.html">&larr; Back to Portfolio</a>
+    </div>
+    <div class="container">
+        <h1>Custom HDBSCAN</h1>
+        <form id="hdbscan-form" class="form-group">
+            <table class="table table-borderless">
+                <tr>
+                    <td>
+                        <label for="principle_components">Principle Components:</label>
+                    </td>
+                    <td>
+                        <input type="number" id="principle_components" name="principle_components" value="2" step="1">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="random_state">Random State:</label>
+                    </td>
+                    <td>
+                        <input type="number" id="random_state" name="random_state" value="22" step="1">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="alpha">Alpha:</label>
+                    </td>
+                    <td>
+                        <input type="number" id="alpha" name="alpha" value="1.4" step="0.1">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="approx_min_span_tree">Approximate Minimum Span Tree:</label>
+                    </td>
+                    <td>
+                        <select id="approx_min_span_tree" name="approx_min_span_tree">
+                            <option value="true" selected>True</option>
+                            <option value="false">False</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="gen_min_span_tree">Generate Minimum Span Tree:</label>
+                    </td>
+                    <td>
+                        <select id="gen_min_span_tree" name="gen_min_span_tree">
+                            <option value="true">True</option>
+                            <option value="false" selected>False</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="leaf_size">Leaf Size:</label>
+                    </td>
+                    <td>
+                        <input type="number" id="leaf_size" name="leaf_size" value="40" step="1">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="cluster_selection_epsilon">Cluster Selection Epsilon:</label>
+                    </td>
+                    <td>
+                        <input type="number" id="cluster_selection_epsilon" name="cluster_selection_epsilon" value="1" step=".001">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="metric">Metric:</label>
+                    </td>
+                    <td>
+                        <select id="metric" name="metric" class="form-control">
+                            <option value="braycurtis">braycurtis</option>
+                            <option value="canberra">canberra</option>
+                            <option value="chebyshev">chebyshev</option>
+                            <option value="cityblock">cityblock</option>
+                            <option value="dice">dice</option>
+                            <option value="euclidean">euclidean</option>
+                            <option value="hamming">hamming</option>
+                            <option value="haversine">haversine</option>
+                            <option value="infinity">infinity</option>
+                            <option value="jaccard">jaccard</option>
+                            <option value="kulsinski">kulsinski</option>
+                            <option value="l1">l1</option>
+                            <option value="l2" selected>l2</option>
+                            <option value="mahalanobis">mahalanobis</option>
+                            <option value="manhattan">manhattan</option>
+                            <option value="matching">matching</option>
+                            <option value="minkowski">minkowski</option>
+                            <option value="p">p</option>
+                            <option value="pyfunc">pyfunc</option>
+                            <option value="rogerstanimoto">rogerstanimoto</option>
+                            <option value="russellrao">russellrao</option>
+                            <option value="seuclidean">seuclidean</option>
+                            <option value="sokalmichener">sokalmichener</option>
+                            <option value="sokalsneath">sokalsneath</option>
+                            <option value="wminkowski">wminkowski</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="min_cluster_size">Minimum Cluster Size:</label>
+                    </td>
+                    <td>
+                        <input type="number" id="min_cluster_size" name="min_cluster_size" value="5" step="1">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="allow_single_cluster">Allow Single Cluster:</label>
+                    </td>
+                    <td>
+                        <select id="allow_single_cluster" name="allow_single_cluster">
+                            <option value="true" selected>True</option>
+                            <option value="false">False</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+
+            <input type="submit" value="Submit" class="btn btn-primary">
+            <input type="button" value="Get Groups" class="btn btn-secondary" id="submit2">
+        </form>
+        <div id="response">
+		
+		
+		
+		
+		
+		</div>
+	</div>
+    <script src="main.js"></script>
+</body>
+</html>

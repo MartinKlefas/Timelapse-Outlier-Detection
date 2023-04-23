@@ -27,6 +27,8 @@ from cuml.cluster import hdbscan
 import uvicorn
 import pandas as pd
 
+import zlib
+
 from fastapi import File
 from fastapi import UploadFile
 from fastapi import Form
@@ -99,7 +101,7 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
                 metric : str ='manhattan', min_cluster_size:int=5,allow_single_cluster:bool=True):
     global features
     try:
-        figures = feather.read_feather("plots/plots.feather")
+        figures = feather.read_feather("plots/inter_plots.feather")
     except:
         figures = None
 
@@ -141,12 +143,10 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
     ax.set_title("HDBSCAN Clustering")
     plt.tight_layout()
     print("returning")
-   # fin = time.perf_counter()
-   # print(f"Timings:\n tot:  {fin- start:0.4f}\nPCA:  {start_cluster-start}\nfit:  {start_plot-start_cluster}\nplot: {fin-start_plot}")
-    filename = "plots/" + str(uuid.uuid4()) + ".png"
-    plt.savefig(filename)
 
-    d= {"filename":filename,"principle_components" : principle_components, "random_state" : random_state, "alpha":alpha, "approx_min_span_tree":approx_min_span_tree,
+    plot = mpld3.fig_to_html(fig=fig)
+    a = zlib.compress(plot.encode())
+    d= {"plot":a,"principle_components" : principle_components, "random_state" : random_state, "alpha":alpha, "approx_min_span_tree":approx_min_span_tree,
                "gen_min_span_tree": gen_min_span_tree, "leaf_size" : leaf_size, "cluster_selection_epsilon" : cluster_selection_epsilon,
                 "metric": metric, "min_cluster_size":min_cluster_size,"allow_single_cluster":allow_single_cluster}
     df_dictionary = pd.DataFrame([d],index=[0])
@@ -155,15 +155,15 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
     else:
         figures = df_dictionary
     
-    feather.write_feather(df=figures,dest="plots/plots.feather")
-    return mpld3.fig_to_html(fig=fig)
+    feather.write_feather(df=figures,dest="plots/inter_plots.feather")
+    
 
 def already_done(principle_components : int = 2, random_state: int =22, alpha:float=1.4, approx_min_span_tree:bool=True,
                 gen_min_span_tree:bool=False, leaf_size: int = 40, cluster_selection_epsilon: float = 1.0,
                 metric : str ='manhattan', min_cluster_size:int=5,allow_single_cluster:bool=True):
     
     try:
-        figures = feather.read_feather("plots/plots.feather")
+        figures = feather.read_feather("plots/inter_plots.feather")
     
         results = figures.loc[(figures['principle_components'] == principle_components) & 
                             (figures['random_state'] == random_state) & 
@@ -176,7 +176,7 @@ def already_done(principle_components : int = 2, random_state: int =22, alpha:fl
                             (figures['min_cluster_size'] == min_cluster_size) & 
                             (figures['allow_single_cluster'] == allow_single_cluster)  
                             ,
-                    ['filename']]
+                    ['plot']]
     except:
         results = None
 
@@ -272,15 +272,11 @@ async def custom_hdb(background_tasks: BackgroundTasks, params: HDBSCANParams):
     if not (found is None) and len(found) > 0:
         print("returning image")
        
-        #with open(found["filename"].to_string(index=False), "rb") as image_file:
-        #    img_base64 = base64.b64encode(image_file.read()).decode()
-        #trying this instead
-        inter_plot = do_hdbscan_cluster(principle_components=params.principle_components,random_state=params.random_state,
-                                    alpha=params.alpha, approx_min_span_tree=params.approx_min_span_tree,gen_min_span_tree=params.gen_min_span_tree,
-                                    leaf_size=params.leaf_size,  cluster_selection_epsilon=params.cluster_selection_epsilon,
-                                    metric=params.metric, min_cluster_size=params.min_cluster_size, 
-                                    allow_single_cluster=params.allow_single_cluster)
-        return JSONResponse(content={"message": "found", "image": inter_plot})
+        inter_plot = zlib.decompress(found["plot"].iloc[0]).decode()
+
+       
+
+        return JSONResponse(content={"message": "found", "plot": inter_plot})
     else:
         print("adding job")
 
@@ -298,5 +294,5 @@ features = init(pathlib.Path("features/"))
 fileNames = readFileNames(pathlib.Path("features/"))
 
 if __name__ == '__main__':
-  uvicorn.run("clustering_api_linux:app", host="0.0.0.0", port=8080, timeout_keep_alive=120)
+  uvicorn.run("clustering_api_linux_interactive:app", host="0.0.0.0", port=8080, timeout_keep_alive=120)
   
