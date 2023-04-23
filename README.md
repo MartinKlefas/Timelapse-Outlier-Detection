@@ -48,11 +48,17 @@ GPU accelleration of HDBSCAN clustering is in its' infancy, and so even with GPU
 This is a bit of a hacky method, In a real implementation I'd be using [cUML Clustering from Rapids.ai](https://developer.nvidia.com/blog/faster-hdbscan-soft-clustering-with-rapids-cuml/) to run the clustering on a more modern GPU in seconds rather than minutes.
 
   
-The final part of this stage, yet to be implemented, is to output the group details for a given clustering setup.
+The final part of this stage is to output the group details for a given clustering setup. This allows the user to simply interact with graph options, and then use their best work in any next software package
 
 ## Stage 5: Interactivity and Visualization
 
-In this stage (not yet started), I plan to add interactivity to the plots and allow users to visualize image groups, interact with the plot, and potentially select subsets of data to re-cluster or manipulate. Users will be able to request a list of files in a particular cluster for further processing outside of this package.
+In this stage the matplotlib static figures were replaced with mpld3 interactive javascript visualisaitons. The main changes were in the js used to understand and display the API responses - these are included as exemplars in the  (example websites)[example_websites] folder. The drawback of this library is that all of the points are sent by the API as text encoded within the JSON response. It then relies on client-side JSON processing to display all the points, and thus only small collections of points should be shown in this way.
+
+## Stage 6: Replacing clustering with FAISS
+
+In this final, and as yet un-implemented, phase I will be looking at the point at which clustering can be replaced by a more straightforward "nearest existing image" search implemented in FAISS. This would mean that new images can be classified without having to recluster the existing database. The downside is that we need to estimate how far away from the existing groups is "too far" for the new image to be a part of that group. We may also miss the formation of new groups on a new part of the graph, simply because we're looking at new images one at a time.
+
+Speed, convenience, and proximity metrics will be investigated in [this notebook](FAISS.ipynb)
 
   
   
