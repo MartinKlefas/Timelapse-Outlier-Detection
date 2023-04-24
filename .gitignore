@@ -134,7 +134,7 @@ test/
 # local cached files
 features/
 #second cache
-faiss/ 
+faiss-test/ 
 
 # pre-computed graphs don't need to be on github
 plots/

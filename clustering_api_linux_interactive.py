@@ -156,6 +156,7 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
         figures = df_dictionary
     
     feather.write_feather(df=figures,dest="plots/inter_plots.feather")
+    print("Feather rewritten")
     
 
 def already_done(principle_components : int = 2, random_state: int =22, alpha:float=1.4, approx_min_span_tree:bool=True,
