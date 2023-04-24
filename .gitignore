@@ -133,6 +133,11 @@ test/
 
 # local cached files
 features/
+#second cache
+faiss/ 
 
 # pre-computed graphs don't need to be on github
 plots/
+
+# update so notebooks are treated as ordinary python
+*.ipynb linguist-language=python

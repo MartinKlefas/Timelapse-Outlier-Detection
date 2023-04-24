@@ -73,7 +73,7 @@ def init(pickleFolder: pathlib.Path):
     print(f"concatenating features")
     features = np.concatenate(features_list, axis=0)
     print(f"{features.shape[0]} features loaded")
-
+ 
     
     return features
 
