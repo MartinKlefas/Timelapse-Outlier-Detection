@@ -255,7 +255,7 @@ async def custom_hdb(background_tasks: BackgroundTasks,params: HDBSCANParams):
     #background_tasks.add_task(remove_file, "groupPickle.pickle")
 
     return FileResponse(path="groupPickle.pickle")
-s
+
 
 @app.post('/customhdbscan')
 async def custom_hdb(background_tasks: BackgroundTasks, params: HDBSCANParams):
