@@ -18,11 +18,11 @@ from datetime import datetime
 
 from sklearn.decomposition import PCA
 
-import pathlib, os, pickle, time, base64, uuid,sys, itertools
+import pathlib, os, pickle, time, base64, uuid,sys, itertools, gc
 
 from cuml.cluster import hdbscan
 #import hdbscan
-import uvicorn
+import uvicorn, random
 import pandas as pd
 
 from fastapi import File
@@ -115,6 +115,10 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
     print("starting clusterer")
     clusterer.fit(x)
 
+    del x
+
+    gc.collect()
+
     print("plotting")
     unique_labels = np.unique(clusterer.labels_)
 
@@ -198,8 +202,8 @@ def getGroups(filenames,principle_components : int = 2, random_state: int =22, a
     print("starting clusterer")
     clusterer.fit(x)    
 
-
-
+    del x
+    gc.collect()
 
     groups = {}
     for file, cluster in zip(filenames,clusterer.labels_):
@@ -210,6 +214,21 @@ def getGroups(filenames,principle_components : int = 2, random_state: int =22, a
             groups[cluster].append(file)
 
     return groups
+
+def trimFileName(fullPath : str):
+    trimmedPath = fullPath.replace("D:\\Allotment Timelapse\\","")
+    trimmedPath = fullPath.replace("Y:\\Allotment Timelapse\\GoPro TimeLapse\\","")
+    return trimmedPath
+
+def getSamples(groups):
+    samples = {}
+    for gNum, files in groups.items():
+        if len(files) > 10:
+            samples[gNum.item()] = [trimFileName(x) for x in random.sample(files,k=10)]
+        else:
+            samples[gNum.item()] = [trimFileName(x) for x in files]
+    
+    return samples
 
 app = FastAPI()
 print("Starting server")
@@ -255,6 +274,31 @@ async def custom_hdb(background_tasks: BackgroundTasks,params: HDBSCANParams):
     #background_tasks.add_task(remove_file, "groupPickle.pickle")
 
     return FileResponse(path="groupPickle.pickle")
+
+@app.post('/hdbSamples')
+async def custom_hdb(background_tasks: BackgroundTasks,params: HDBSCANParams):
+    global fileNames
+    groups = getGroups(fileNames, principle_components=params.principle_components,random_state=params.random_state,
+                                    alpha=params.alpha, approx_min_span_tree=params.approx_min_span_tree,gen_min_span_tree=params.gen_min_span_tree,
+                                    leaf_size=params.leaf_size,  cluster_selection_epsilon=params.cluster_selection_epsilon,
+                                    metric=params.metric, min_cluster_size=params.min_cluster_size, 
+                                    allow_single_cluster=params.allow_single_cluster)
+    with open("groupPickle.pickle","wb") as pickleFile:
+        pickle.dump(groups,pickleFile)
+
+    with open("groupPickle.pickle", "rb") as f:
+        file_content = f.read()
+    file_base64 = base64.b64encode(file_content).decode("utf-8")
+    
+
+    samples = getSamples(groups)
+
+
+
+    #background_tasks.add_task(remove_file, "groupPickle.pickle")
+    return JSONResponse(content={"image_groups": samples})
+
+    #return JSONResponse(content={"file_base64": file_base64, "image_groups": samples})
 
 
 @app.post('/customhdbscan')
