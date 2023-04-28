@@ -78,7 +78,7 @@ def feat_extract(rootFolder : pathlib.Path = pathlib.Path("/"), imagePattern : s
     features_pickles = rootFolder.rglob('features_batch_*.pickle')
     list_of_pickles =  [str(p) for p in features_pickles] # this should be a relatively short list, so it shouldn't cause the same impact as "listing" the image files from the generator
 
-    if len(list_of_pickles) > 0 and (not forceBar or batches_current(rootFolder)): # the batches_current feature scans all files and folders for any updates after the pickle.
+    if len(list_of_pickles) > 0 and (not forceBar or batches_current(rootFolder,"*.jpg")): # the batches_current feature scans all files and folders for any updates after the pickle.
         #this would take a long time on usb/spinning disks/etc so we follow the same rule as the progress bar, hoping it'll be ok.
         print("reading old progress")
         feat_pickles = rootFolder.rglob('features*.pickle')
@@ -173,7 +173,7 @@ def feat_extract(rootFolder : pathlib.Path = pathlib.Path("/"), imagePattern : s
                 pickle.dump(features, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-imagePath = pathlib.Path("Y:/Allotment Timelapse")
+imagePath = pathlib.Path("C:/xampp/htdocs/clustering/thumbnails")
 
 for directory in [x for x in imagePath.iterdir() if x.is_dir()]:
     print(f"testing {directory} for changes.")

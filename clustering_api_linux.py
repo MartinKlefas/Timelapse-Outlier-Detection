@@ -218,6 +218,7 @@ def getGroups(filenames,principle_components : int = 2, random_state: int =22, a
 def trimFileName(fullPath : str):
     trimmedPath = fullPath.replace("D:\\Allotment Timelapse\\","")
     trimmedPath = trimmedPath.replace("Y:\\Allotment Timelapse\\GoPro TimeLapse\\","")
+    trimmedPath = trimmedPath.replace("C:\\xampp\\htdocs\\clustering\\thumbnails\\All","")
     return trimmedPath
 
 def getSamples(groups, num_samples : int = 10):
