@@ -1,8 +1,8 @@
 
 # Time-lapse Outlier Detection
 
-This project aims to use Machine Vision, unsupervised learning, and clustering techniques to identify outliers in large image datasets, such as those used for time-lapse video creation. The project is a work in progress and has been undertaken in stages to provide a comprehensive understanding of the development process.
-  
+This project aims to use Machine Vision, unsupervised learning, and clustering techniques to learn to identify outliers in large image datasets, such as those used for time-lapse video creation. The project is a work in progress and has been undertaken in stages to provide a comprehensive understanding of the development process.
+
 
 ## Stage 1: Proof of Concept
 
