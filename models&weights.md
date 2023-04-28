@@ -26,3 +26,8 @@ Under this paradigm labelled examples of the images are used to either train a C
 These models have been trained to recognise diverse image features. ImageNet includes a wide variety of subjects and scenes with complex hidden features such as hidden foxes and bunches of bananas: 
 
 ![bananas](bananas.png) ![foxes](https://storage.googleapis.com/kaggle-competitions/kaggle/3333/media/kit_fox.JPG)
+
+While our real images are not particularly similar to the training set, some are bound to look more like foxes than others. We can improve the pre-trained model by fine-tuning, but this again requires segmentation and labelling of part of the real image set, which was one of the goals of this project.
+
+
+# Summary:
