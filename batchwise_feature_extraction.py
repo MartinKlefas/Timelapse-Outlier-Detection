@@ -59,7 +59,7 @@ def feat_extract(rootFolder : pathlib.Path = pathlib.Path("/"), imagePattern : s
     new_pickles_folder = pathlib.Path(rootFolder / "pickles" / str(uuid.uuid4()) / "")
     new_pickles_folder.mkdir(parents=True, exist_ok=True)
 
-    model_ft = VGG16()
+    model_ft = VGG16(weights="imagenet")
     model_ft = Model(inputs= model_ft.inputs,outputs = model_ft.layers[-2].output)
     print("finding files")
     files = rootFolder.rglob(imagePattern)

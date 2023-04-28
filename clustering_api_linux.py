@@ -217,18 +217,20 @@ def getGroups(filenames,principle_components : int = 2, random_state: int =22, a
 
 def trimFileName(fullPath : str):
     trimmedPath = fullPath.replace("D:\\Allotment Timelapse\\","")
-    trimmedPath = fullPath.replace("Y:\\Allotment Timelapse\\GoPro TimeLapse\\","")
+    trimmedPath = trimmedPath.replace("Y:\\Allotment Timelapse\\GoPro TimeLapse\\","")
     return trimmedPath
 
-def getSamples(groups):
+def getSamples(groups, num_samples : int = 10):
     samples = {}
+    sizes = {}
     for gNum, files in groups.items():
-        if len(files) > 10:
-            samples[gNum.item()] = [trimFileName(x) for x in random.sample(files,k=10)]
+        sizes[gNum.item()] = len(files)
+        if len(files) > num_samples:
+            samples[gNum.item()] = [trimFileName(x) for x in random.sample(files,k=num_samples)]
         else:
             samples[gNum.item()] = [trimFileName(x) for x in files]
     
-    return samples
+    return samples, sizes
 
 app = FastAPI()
 print("Starting server")
@@ -269,7 +271,7 @@ async def custom_hdb(background_tasks: BackgroundTasks,params: HDBSCANParams):
                                     metric=params.metric, min_cluster_size=params.min_cluster_size, 
                                     allow_single_cluster=params.allow_single_cluster)
     with open("groupPickle.pickle","wb") as pickleFile:
-        pickle.dump(groups,pickleFile)
+        pickle.dump(groups,pickleFile,protocol=pickle.HIGHEST_PROTOCOL)
     
     #background_tasks.add_task(remove_file, "groupPickle.pickle")
 
@@ -284,21 +286,22 @@ async def custom_hdb(background_tasks: BackgroundTasks,params: HDBSCANParams):
                                     metric=params.metric, min_cluster_size=params.min_cluster_size, 
                                     allow_single_cluster=params.allow_single_cluster)
     with open("groupPickle.pickle","wb") as pickleFile:
-        pickle.dump(groups,pickleFile)
+        pickle.dump(groups,pickleFile,protocol=pickle.HIGHEST_PROTOCOL)
+    
 
     with open("groupPickle.pickle", "rb") as f:
         file_content = f.read()
     file_base64 = base64.b64encode(file_content).decode("utf-8")
     
 
-    samples = getSamples(groups)
+    samples,sizes = getSamples(groups,20)
 
 
 
     #background_tasks.add_task(remove_file, "groupPickle.pickle")
-    return JSONResponse(content={"image_groups": samples})
+    #return JSONResponse(content={"image_groups": samples})
 
-    #return JSONResponse(content={"file_base64": file_base64, "image_groups": samples})
+    return JSONResponse(content={"file_base64": file_base64,"filename": "groupPickle.pickle", "image_groups": samples, "len_groups": sizes})
 
 
 @app.post('/customhdbscan')
