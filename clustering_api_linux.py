@@ -16,9 +16,13 @@ from pydantic import BaseModel
 
 from datetime import datetime
 
-from sklearn.decomposition import PCA
+from sklearn.decomposition import TruncatedSVD
+from sklearn.preprocessing import StandardScaler
 
 import pathlib, os, pickle, time, base64, uuid,sys, itertools, gc
+
+from scipy.sparse import vstack, csr_matrix
+
 
 from cuml.cluster import hdbscan
 #import hdbscan
@@ -59,7 +63,8 @@ def remove_file(path: str) -> None:
 def load_pickle(thisPickle):
     with open(str(thisPickle), 'rb') as handle:
         batch_features = pickle.load(handle)
-    return batch_features.reshape(-1, 4096)
+    return csr_matrix(batch_features.reshape(-1, 4096))
+
 def load_pickle_list(thisPickle):
     with open(str(thisPickle), 'rb') as handle:
         batch_elems = pickle.load(handle)
@@ -73,11 +78,14 @@ def init(pickleFolder: pathlib.Path):
 
     with ThreadPoolExecutor() as executor:
         features_list = list(tqdm(executor.map(load_pickle, list_of_pickles), total=len(list_of_pickles), desc="Loading Pickles"))
+    
 
     print(f"concatenating features")
-    features = np.concatenate(features_list, axis=0)
+    features = vstack(features_list)
     print(f"{features.shape[0]} features loaded")
+    del features_list
 
+    gc.collect()
     
     return features
 
@@ -103,10 +111,12 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
 
     #start = time.perf_counter()
     print("starting pca")
+    
+    # migrated to sparse matrices so we need to use TruncatedSVD (PCA for sparse matrices)
 
-    pca = PCA(n_components=principle_components, random_state=random_state)
-    pca.fit(features)
-    x = pca.transform(features)
+    pca = TruncatedSVD(n_components=principle_components, random_state=random_state)
+    x =  pca.fit_transform(features)
+
     
     clusterer = hdbscan.HDBSCAN(algorithm='boruvka_kdtree', alpha=alpha, approx_min_span_tree=approx_min_span_tree,
     gen_min_span_tree=gen_min_span_tree, leaf_size=leaf_size, cluster_selection_epsilon=cluster_selection_epsilon,
@@ -191,9 +201,9 @@ def getGroups(filenames,principle_components : int = 2, random_state: int =22, a
     #start = time.perf_counter()
     print("starting pca")
 
-    pca = PCA(n_components=principle_components, random_state=random_state)
-    pca.fit(features)
-    x = pca.transform(features)
+    # migrated to sparse matrices so we need to use TruncatedSVD (PCA for sparse matrices)
+    pca = TruncatedSVD(n_components=principle_components, random_state=random_state)
+    x =  pca.fit_transform(features)
     
     clusterer = hdbscan.HDBSCAN(algorithm='boruvka_kdtree', alpha=alpha, approx_min_span_tree=approx_min_span_tree,
     gen_min_span_tree=gen_min_span_tree, leaf_size=leaf_size, cluster_selection_epsilon=cluster_selection_epsilon,
@@ -234,8 +244,7 @@ def getSamples(groups, num_samples : int = 10):
     return samples, sizes
 
 app = FastAPI()
-print("Starting server")
-start_time = datetime.now()
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -247,12 +256,26 @@ app.add_middleware(
 
 @app.get('/healthcheck')
 def healthcheck():
-  timediff = datetime.now() - start_time
+    timediff = datetime.now() - start_time
+
+    days = timediff.days
+    seconds = timediff.seconds
+    hours, remainder = divmod(seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    msg = "API has been running for "
+    if days > 0:
+        msg += f"{days} days, "
+    if hours > 0:
+        msg += f"{hours} hours, "
 
 
-  msg = f"API has been running for {str(timediff )}, and is clustering info on {features.shape[0]} images."
+    format_num_images = format(features.shape[0],",")
+
+    msg += f"{minutes:02d}:{seconds:02d}, and is clustering info on {format_num_images} images."
+
   
-  return {"message": msg}
+    return {"message": msg}
 
 @app.post('/defaulthdbscan')
 def default_hdb():
@@ -300,9 +323,35 @@ async def custom_hdb(background_tasks: BackgroundTasks,params: HDBSCANParams):
 
 
     #background_tasks.add_task(remove_file, "groupPickle.pickle")
-    #return JSONResponse(content={"image_groups": samples})
-
+   
     return JSONResponse(content={"file_base64": file_base64,"filename": "groupPickle.pickle", "image_groups": samples, "len_groups": sizes})
+
+@app.get('/screeplot')
+async def scree_plot():
+
+   
+    if not pathlib.Path('scree plot.png').exists():
+        print("svd")
+        # Apply TruncatedSVD
+        n_components = 50
+        svd = TruncatedSVD(n_components=n_components)
+        svd.fit(features)
+        print("variance")
+        # Calculate the explained variance for each component
+        explained_variance = svd.explained_variance_ratio_
+
+        print("plotting")
+        # Create a scree plot
+        plt.figure(figsize=(8, 6))
+        plt.plot(range(1, n_components + 1), explained_variance, marker='o', linestyle='-', label='Explained Variance')
+        plt.xlabel('Principal Component')
+        plt.ylabel('Explained Variance Ratio')
+        plt.title('Scree Plot')
+        plt.legend()
+        plt.grid()
+        plt.savefig('scree plot.png')
+        
+    return FileResponse('scree plot.png')
 
 
 @app.post('/customhdbscan')
@@ -332,11 +381,14 @@ async def custom_hdb(background_tasks: BackgroundTasks, params: HDBSCANParams):
     
         return JSONResponse(content={"message": "please wait", "wait_time": "100"})
 
-
-
-features = init(pathlib.Path("features/"))
-fileNames = readFileNames(pathlib.Path("features/"))
-
 if __name__ == '__main__':
-  uvicorn.run("clustering_api_linux:app", host="0.0.0.0", port=8080, timeout_keep_alive=120)
+    print("Starting server")
+    uvicorn.run("clustering_api_linux:app", host="0.0.0.0", port=8080, timeout_keep_alive=120)
+else:
+    start_time = datetime.now()
+    features = init(pathlib.Path("features/"))
+    fileNames = readFileNames(pathlib.Path("features/"))
+    # probably not relevant anymore
+    if pathlib.Path("scree plot.png").exists():
+        pathlib.Path("scree plot.png").unlink()
   
