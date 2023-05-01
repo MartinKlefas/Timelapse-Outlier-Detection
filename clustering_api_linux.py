@@ -339,11 +339,14 @@ async def scree_plot():
         print("variance")
         # Calculate the explained variance for each component
         explained_variance = svd.explained_variance_ratio_
+        cumulative_explained_variance = np.cumsum(explained_variance)
 
         print("plotting")
         # Create a scree plot
         plt.figure(figsize=(8, 6))
         plt.plot(range(1, n_components + 1), explained_variance, marker='o', linestyle='-', label='Explained Variance')
+        plt.plot(range(1, len(cumulative_explained_variance) + 1), cumulative_explained_variance, marker='o', linestyle='-', label='Cumulative Explained Variance')
+
         plt.xlabel('Principal Component')
         plt.ylabel('Explained Variance Ratio')
         plt.title('Scree Plot')
