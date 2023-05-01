@@ -16,8 +16,9 @@ from pydantic import BaseModel
 
 from datetime import datetime
 
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import TruncatedSVD
+import dask.array as da
+from dask_ml.decomposition import TruncatedSVD
+from dask.diagnostics import ProgressBar
 
 import pathlib, os, pickle, time, base64, uuid,sys, itertools, gc
 
@@ -66,7 +67,7 @@ def load_pickle(thisPickle):
     with open(str(thisPickle), 'rb') as handle:
         batch_features = pickle.load(handle)
     
-    return csr_matrix(batch_features.reshape(-1, 4096))
+    return da.from_array(csr_matrix(batch_features.reshape(-1, 4096)))
 
 def load_pickle_list(thisPickle):
     with open(str(thisPickle), 'rb') as handle:
@@ -85,7 +86,7 @@ def init(pickleFolder: pathlib.Path):
 
     print(f"concatenating features")
 
-    features = vstack(features_list).tocsr()
+    features = da.vstack(features_list)
     print(f"{features.shape[0]} features loaded")
     del features_list
 
@@ -119,7 +120,8 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
     # migrated to sparse matrices so we need to use TruncatedSVD (PCA for sparse matrices)
 
     pca = TruncatedSVD(n_components=principle_components, random_state=random_state)
-    x =  pca.fit_transform(features)
+    with ProgressBar():
+        x =  pca.fit_transform(features)
 
     
     clusterer = hdbscan.HDBSCAN(algorithm='boruvka_kdtree', alpha=alpha, approx_min_span_tree=approx_min_span_tree,
@@ -207,7 +209,8 @@ def getGroups(filenames,principle_components : int = 2, random_state: int =22, a
 
     # migrated to sparse matrices so we need to use TruncatedSVD (PCA for sparse matrices)
     pca = TruncatedSVD(n_components=principle_components, random_state=random_state)
-    x =  pca.fit_transform(features)
+    with ProgressBar():
+        x =  pca.fit_transform(features)
     
     clusterer = hdbscan.HDBSCAN(algorithm='boruvka_kdtree', alpha=alpha, approx_min_span_tree=approx_min_span_tree,
     gen_min_span_tree=gen_min_span_tree, leaf_size=leaf_size, cluster_selection_epsilon=cluster_selection_epsilon,
@@ -338,8 +341,11 @@ async def scree_plot():
         print("svd")
         # Apply TruncatedSVD
         n_components = 50
+        
         svd = TruncatedSVD(n_components=n_components)
-        svd.fit(features)
+        with ProgressBar():
+            svd.fit(features)
+            
         print("variance")
         # Calculate the explained variance for each component
         explained_variance = svd.explained_variance_ratio_
