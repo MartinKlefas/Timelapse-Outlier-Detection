@@ -16,7 +16,6 @@ from pydantic import BaseModel
 
 from datetime import datetime
 
-from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import StandardScaler
 
 import pathlib, os, pickle, time, base64, uuid,sys, itertools, gc
@@ -25,6 +24,9 @@ from scipy.sparse import vstack, csr_matrix
 
 
 from cuml.cluster import hdbscan
+import cuml 
+import cupy as cp
+
 #import hdbscan
 import uvicorn, random
 import pandas as pd
@@ -63,7 +65,10 @@ def remove_file(path: str) -> None:
 def load_pickle(thisPickle):
     with open(str(thisPickle), 'rb') as handle:
         batch_features = pickle.load(handle)
-    return csr_matrix(batch_features.reshape(-1, 4096))
+
+    batch_features_cupy = cp.array(batch_features)
+    
+    return cp.sparse.csr_matrix(batch_features_cupy.reshape(-1, 4096))
 
 def load_pickle_list(thisPickle):
     with open(str(thisPickle), 'rb') as handle:
@@ -81,7 +86,8 @@ def init(pickleFolder: pathlib.Path):
     
 
     print(f"concatenating features")
-    features = vstack(features_list)
+
+    features = cp.sparse.vstack(features_list).tocsr()
     print(f"{features.shape[0]} features loaded")
     del features_list
 
@@ -114,7 +120,7 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
     
     # migrated to sparse matrices so we need to use TruncatedSVD (PCA for sparse matrices)
 
-    pca = TruncatedSVD(n_components=principle_components, random_state=random_state)
+    pca = cuml.TruncatedSVD(n_components=principle_components, random_state=random_state)
     x =  pca.fit_transform(features)
 
     
@@ -202,7 +208,7 @@ def getGroups(filenames,principle_components : int = 2, random_state: int =22, a
     print("starting pca")
 
     # migrated to sparse matrices so we need to use TruncatedSVD (PCA for sparse matrices)
-    pca = TruncatedSVD(n_components=principle_components, random_state=random_state)
+    pca = cuml.TruncatedSVD(n_components=principle_components, random_state=random_state)
     x =  pca.fit_transform(features)
     
     clusterer = hdbscan.HDBSCAN(algorithm='boruvka_kdtree', alpha=alpha, approx_min_span_tree=approx_min_span_tree,
@@ -334,7 +340,7 @@ async def scree_plot():
         print("svd")
         # Apply TruncatedSVD
         n_components = 50
-        svd = TruncatedSVD(n_components=n_components)
+        svd = cuml.TruncatedSVD(n_components=n_components)
         svd.fit(features)
         print("variance")
         # Calculate the explained variance for each component
