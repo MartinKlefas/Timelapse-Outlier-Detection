@@ -23,6 +23,7 @@ from dask.diagnostics import ProgressBar
 import pathlib, os, pickle, time, base64, uuid,sys, itertools, gc
 
 from scipy.sparse import vstack, csr_matrix
+import sparse
 
 
 from cuml.cluster import hdbscan
@@ -67,7 +68,7 @@ def load_pickle(thisPickle):
     with open(str(thisPickle), 'rb') as handle:
         batch_features = pickle.load(handle)
     
-    return da.from_array(csr_matrix(batch_features.reshape(-1, 4096)))
+    return sparse.COO.from_scipy_sparse(csr_matrix(batch_features.reshape(-1, 4096)))
 
 def load_pickle_list(thisPickle):
     with open(str(thisPickle), 'rb') as handle:
@@ -86,8 +87,11 @@ def init(pickleFolder: pathlib.Path):
 
     print(f"concatenating features")
 
-    features = da.vstack(features_list)
+    features =sparse.concatenate(features_list,axis=0)
+
+
     print(f"{features.shape[0]} features loaded")
+
     del features_list
 
     gc.collect()
@@ -120,8 +124,9 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
     # migrated to sparse matrices so we need to use TruncatedSVD (PCA for sparse matrices)
 
     pca = TruncatedSVD(n_components=principle_components, random_state=random_state)
+    dask_array = da.from_array(features.todense(), chunks=(100000, 1024))
     with ProgressBar():
-        x =  pca.fit_transform(features)
+        x =  pca.fit_transform(dask_array)
 
     
     clusterer = hdbscan.HDBSCAN(algorithm='boruvka_kdtree', alpha=alpha, approx_min_span_tree=approx_min_span_tree,
@@ -338,13 +343,15 @@ async def scree_plot():
 
    
     if not pathlib.Path('scree plot.png').exists():
-        print("svd")
+
         # Apply TruncatedSVD
         n_components = 50
-        
+        print("dense")
         svd = TruncatedSVD(n_components=n_components)
+        dask_array = da.from_array(features.todense(), chunks=(50000, 4096))
+        print("svd")
         with ProgressBar():
-            svd.fit(features)
+            svd.fit(dask_array)
             
         print("variance")
         # Calculate the explained variance for each component
