@@ -16,19 +16,15 @@ from pydantic import BaseModel
 
 from datetime import datetime
 
-import dask.array as da
-from dask_ml.decomposition import TruncatedSVD
-from dask.diagnostics import ProgressBar
+from sklearn.decomposition import TruncatedSVD
+from sklearn.preprocessing import StandardScaler
 
 import pathlib, os, pickle, time, base64, uuid,sys, itertools, gc
 
 from scipy.sparse import vstack, csr_matrix
-import sparse
 
 
 from cuml.cluster import hdbscan
-
-
 #import hdbscan
 import uvicorn, random
 import pandas as pd
@@ -67,8 +63,7 @@ def remove_file(path: str) -> None:
 def load_pickle(thisPickle):
     with open(str(thisPickle), 'rb') as handle:
         batch_features = pickle.load(handle)
-    
-    return sparse.COO.from_scipy_sparse(csr_matrix(batch_features.reshape(-1, 4096)))
+    return csr_matrix(batch_features.reshape(-1, 4096))
 
 def load_pickle_list(thisPickle):
     with open(str(thisPickle), 'rb') as handle:
@@ -86,12 +81,8 @@ def init(pickleFolder: pathlib.Path):
     
 
     print(f"concatenating features")
-
-    features =sparse.concatenate(features_list,axis=0)
-
-
+    features = vstack(features_list)
     print(f"{features.shape[0]} features loaded")
-
     del features_list
 
     gc.collect()
@@ -101,8 +92,8 @@ def init(pickleFolder: pathlib.Path):
 def readFileNames(pickleFolder: pathlib.Path):
     print("Reading FileNames")
 
-    feat_pickles = pickleFolder.rglob('filenames*.pickle')
-    list_of_pickles =  [str(p) for p in feat_pickles]
+    file_pickles = pickleFolder.rglob('filenames*.pickle')
+    list_of_pickles =  [str(p) for p in file_pickles]
 
     with ThreadPoolExecutor() as executor:
         filesList = list(itertools.chain.from_iterable(list(executor.map(load_pickle_list, list_of_pickles))))
@@ -124,9 +115,7 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
     # migrated to sparse matrices so we need to use TruncatedSVD (PCA for sparse matrices)
 
     pca = TruncatedSVD(n_components=principle_components, random_state=random_state)
-    dask_array = da.from_array(features.todense(), chunks=(100000, 1024))
-    with ProgressBar():
-        x =  pca.fit_transform(dask_array)
+    x =  pca.fit_transform(features)
 
     
     clusterer = hdbscan.HDBSCAN(algorithm='boruvka_kdtree', alpha=alpha, approx_min_span_tree=approx_min_span_tree,
@@ -214,8 +203,7 @@ def getGroups(filenames,principle_components : int = 2, random_state: int =22, a
 
     # migrated to sparse matrices so we need to use TruncatedSVD (PCA for sparse matrices)
     pca = TruncatedSVD(n_components=principle_components, random_state=random_state)
-    with ProgressBar():
-        x =  pca.fit_transform(features)
+    x =  pca.fit_transform(features)
     
     clusterer = hdbscan.HDBSCAN(algorithm='boruvka_kdtree', alpha=alpha, approx_min_span_tree=approx_min_span_tree,
     gen_min_span_tree=gen_min_span_tree, leaf_size=leaf_size, cluster_selection_epsilon=cluster_selection_epsilon,
@@ -343,16 +331,11 @@ async def scree_plot():
 
    
     if not pathlib.Path('scree plot.png').exists():
-
+        print("svd")
         # Apply TruncatedSVD
         n_components = 50
-        print("dense")
         svd = TruncatedSVD(n_components=n_components)
-        dask_array = da.from_array(features.todense(), chunks=(50000, 4096))
-        print("svd")
-        with ProgressBar():
-            svd.fit(dask_array)
-            
+        svd.fit(features)
         print("variance")
         # Calculate the explained variance for each component
         explained_variance = svd.explained_variance_ratio_
