@@ -45,17 +45,19 @@ With a set of around 750,000 realistic images now encoded, I implemented cluster
 
 The CPU clustering implementation is set up so that the user submits jobs for background execution and can pull their results from a saved library once completed. Timing estimates are fed back for un-solved parameter sets. The linux implementation, being faster, has been amended to return either graphs of clustering outcomes or clustered sets of images for user inspection. 
 
-With all of the above implemented I was able to select some parameters for the clustering scanner to segment the images into a reasonable number of groups. This segmentation was propogated out and a random sample of the images in each group is presented here. This grouping is, unfortunately, poor. This is primarily because the CNN used is trained on ImageNet rather than our own unlabelled data. The [alternatives are discussed here](models%26weights.md), along with recommendations for commercial and academic implementations of this code. The nature of this project though means that a pre-trained model has to be used despite its limitations.
+With all of the above implemented I was able to select some parameters for the clustering scanner to segment the images into a reasonable number of groups. This segmentation was propogated out and a random sample of the images in each group is presented via the API. This grouping is, unfortunately, poor. This is primarily because the CNN used is trained on ImageNet rather than our own unlabelled data. The [alternatives are discussed here](models%26weights.md), along with recommendations for commercial and academic implementations of this code. The nature of this project though means that a pre-trained model has to be used despite its limitations.
 
 ## Stage 5: Interactivity and Visualization
 
-In this stage the matplotlib static figures were replaced with mpld3 interactive javascript visualisaitons. The main changes were in the js used to understand and display the API responses - these are included as exemplars in the  (example websites)[example_websites] folder. The drawback of this library is that all of the points are sent by the API as text encoded within the JSON response. It then relies on client-side JSON processing to display all the points, and thus only small collections of points should be shown in this way.
+In this stage the matplotlib static figures were replaced with mpld3 interactive javascript visualisaitons. The main changes were in the js used to understand and display the API responses - these are included as exemplars in the  [example websites](example_websites) folder. The drawback of this library is that all of the points are sent by the API as text encoded within the JSON response, while this can be compressed in transit it still results in large messages. The plotting then relies on client-side JSON processing to display all the points, which can be resource intensive and thus only small collections of points should be shown in this way.
+
+Some visualisation tweaks were also made to the API and displaying webpages, in order to better gain an understanding of the grouping process. These visualisations would be helpful in benchmarking the encoding and segregation performance of any future models.
 
 ## Stage 6: Replacing clustering with FAISS
 
-In this final, and as yet un-implemented, phase I will be looking at the point at which clustering can be replaced by a more straightforward "nearest existing image" search implemented in FAISS. This would mean that new images can be classified without having to recluster the existing database. The downside is that we need to estimate how far away from the existing groups is "too far" for the new image to be a part of that group. We may also miss the formation of new groups on a new part of the graph, simply because we're looking at new images one at a time.
+In this final phase I will be looking at the point at which clustering can be replaced by a more straightforward "nearest existing image" search implemented in FAISS. This would mean that new images can be classified without having to recluster the existing database. The downside is that we need to estimate how far away from the existing groups is "too far" for the new image to be a part of that group. We may also miss the formation of new groups on a new part of the graph, simply because we're looking at new images one at a time.
 
-Speed, convenience, and proximity metrics will be investigated in [this notebook](FAISS.ipynb)
+Speed, convenience, and proximity metrics are investigated in [this notebook](FAISS.ipynb)
 
   
   

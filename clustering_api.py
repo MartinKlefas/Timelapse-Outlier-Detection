@@ -25,6 +25,7 @@ from scipy.sparse import vstack, csr_matrix
 
 
 #from cuml.cluster import hdbscan
+
 import hdbscan
 import uvicorn, random
 import pandas as pd
@@ -383,7 +384,7 @@ async def custom_hdb(background_tasks: BackgroundTasks, params: HDBSCANParams):
 
 if __name__ == '__main__':
     print("Starting server")
-    uvicorn.run("clustering_api_linux:app", host="0.0.0.0", port=8080, timeout_keep_alive=120)
+    uvicorn.run("clustering_api:app", host="0.0.0.0", port=8080, timeout_keep_alive=120)
 else:
     start_time = datetime.now()
     features = init(pathlib.Path("features/"))
