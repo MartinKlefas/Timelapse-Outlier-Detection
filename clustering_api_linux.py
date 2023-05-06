@@ -319,23 +319,35 @@ async def custom_hdb(background_tasks: BackgroundTasks,params: HDBSCANParams):
     
 
     samples,sizes = getSamples(groups,20)
-
-
+    
+    biggestGroup = max(sizes, key=lambda k: sizes[k])
+    sizeOfBiggest = sizes[biggestGroup]
 
     #background_tasks.add_task(remove_file, "groupPickle.pickle")
    
-    return JSONResponse(content={"file_base64": file_base64,"filename": "groupPickle.pickle", "image_groups": samples, "len_groups": sizes})
+    return JSONResponse(content={"file_base64": file_base64,"filename": "groupPickle.pickle", "image_groups": samples, "len_groups": sizes, 
+                                 "numGroups": len(groups) ,"biggest_group": biggestGroup, "biggestLen": sizeOfBiggest})
 
 @app.get('/screeplot')
 async def scree_plot():
 
    
     if not pathlib.Path('scree plot.png').exists():
+        print("normalise")
+
+        #normalized_csr_matrix = csr_matrix(features, copy=True)
+        #row_norms = np.sqrt(normalized_csr_matrix.power(2).sum(axis=1)).A1
+        #normalized_csr_matrix.data /= np.repeat(row_norms, np.diff(normalized_csr_matrix.indptr))
+        from sklearn.preprocessing import normalize
+        normalized_csr_matrix = normalize(features, axis=1, norm='l2')
+         
+        
         print("svd")
+              
         # Apply TruncatedSVD
         n_components = 50
         svd = TruncatedSVD(n_components=n_components)
-        svd.fit(features)
+        svd.fit(normalized_csr_matrix)
         print("variance")
         # Calculate the explained variance for each component
         explained_variance = svd.explained_variance_ratio_
