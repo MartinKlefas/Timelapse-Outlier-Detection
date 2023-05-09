@@ -55,11 +55,13 @@ Some visualisation tweaks were also made to the API and displaying webpages, in 
 
 ## Stage 6: Replacing clustering with FAISS
 
-In this final phase I will be looking at the point at which clustering can be replaced by a more straightforward "nearest existing image" search implemented in FAISS. This would mean that new images can be classified without having to recluster the existing database. The downside is that we need to estimate how far away from the existing groups is "too far" for the new image to be a part of that group. We may also miss the formation of new groups on a new part of the graph, simply because we're looking at new images one at a time.
+In this phase I will be looking at the point at which clustering can be replaced by a more straightforward "nearest existing image" search implemented in FAISS. This would mean that new images can be classified without having to recluster the existing database. The downside is that we need to estimate how far away from the existing groups is "too far" for the new image to be a part of that group. We may also miss the formation of new groups on a new part of the graph, simply because we're looking at new images one at a time.
 
 Speed, convenience, and proximity metrics are investigated in [this notebook](FAISS.ipynb)
 
-  
+## Stage 7: Putting FAISS into an API
+
+Given that FAISS appears to be a viable solution for the "next" images, and that it only runs effectively on powerful machines, an appropriate API has been built to accept images and predict which cluster of pre-existing images they belong to. This completes the project, and should create a workflow by which junk images in time-lapse data sets can be eliminated. 
   
 
 > Written with [StackEdit](https://stackedit.io/).

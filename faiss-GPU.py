@@ -8,7 +8,6 @@ import itertools
 
 import random
 import matplotlib.pyplot as plt
-from tensorflow.keras.utils import load_img 
 
 import numpy as np 
 import pandas as pd
