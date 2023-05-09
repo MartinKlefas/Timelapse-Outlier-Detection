@@ -125,9 +125,7 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
     print("starting clusterer")
     clusterer.fit(x)
 
-    del x
-
-    gc.collect()
+    
 
     print("plotting")
     unique_labels = np.unique(clusterer.labels_)
@@ -142,6 +140,10 @@ def do_hdbscan_cluster(principle_components : int = 2, random_state: int =22, al
     else:
         fig, (ax, lax) = plt.subplots(ncols=2, subplot_kw={'projection': "3d"},gridspec_kw={"width_ratios":[4, 1]})
         sc = ax.scatter(x[:, 0], x[:, 1],x[:,2], c=clusterer.labels_, cmap=cmap)
+
+    del x
+
+    gc.collect()
 
     # Create a legend using the unique labels and corresponding colors from the colormap
     handles = [plt.Line2D([], [], linestyle='', marker='o', markersize=2, color=cmap(i), label=f'Cluster {label}') for i, label in enumerate(unique_labels)]
