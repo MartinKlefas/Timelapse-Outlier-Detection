@@ -61,7 +61,7 @@ Speed, convenience, and proximity metrics are investigated in [this notebook](FA
 
 ## Stage 7: Putting FAISS into an API
 
-Given that FAISS appears to be a viable solution for the "next" images, and that it only runs effectively on powerful machines, an appropriate API has been built to accept images and predict which cluster of pre-existing images they belong to. This completes the project, and should create a workflow by which junk images in time-lapse data sets can be eliminated. 
+Given that FAISS appears to be a viable solution for the "next" images, and that it only runs effectively on powerful machines, an [API has been built](faiss-api.py) to accept images and predict which cluster of pre-existing images they belong to. This completes the project, and should create a workflow by which junk images in time-lapse data sets can be found and/or eliminated. 
   
 
 > Written with [StackEdit](https://stackedit.io/).

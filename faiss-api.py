@@ -3,7 +3,8 @@ from fastapi.responses import JSONResponse
 
 from fastapi.middleware.cors import CORSMiddleware
 
-from typing import Annotated
+from typing import List
+from typing_extensions import Annotated
 
 from concurrent.futures import ThreadPoolExecutor
 import pathlib, pickle
@@ -71,7 +72,7 @@ def healthcheck():
     return {"message": msg}
 
 @app.post("ImagesToGroupIDs")
-async def create_files(files: Annotated[list[UploadFile], File(description="One or more image files as UploadFile")], useZip :Annotated(str, Form())):
+async def predict_image_groups(files : Annotated[List[UploadFile], File(description="One or more image files as UploadFile")], useZip : Annotated[str, Form("Should the results be zlib compressed when returned (t/f - default is no)?")]):
     useZip = useZip.lower() in ['true', '1', 't', 'y', 'yes', 'on']
 
     if pathlib.Path(indexPath).exists():
