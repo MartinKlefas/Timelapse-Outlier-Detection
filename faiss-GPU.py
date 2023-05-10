@@ -120,6 +120,8 @@ print(f"Index created, {gpu_index_flat.ntotal} vectors added. dropping old varia
 del db_vectors, six_k_features, index
 gc.collect()
 
+faiss.write_index(gpu_index_flat, "faiss-test/index.index")
+
 #change the individual rows into numpy arrays of type float32
 search_vectors = [np.array(x, dtype="float32") for x in one_k_features]
 
