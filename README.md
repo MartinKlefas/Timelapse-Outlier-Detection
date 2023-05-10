@@ -7,13 +7,13 @@ This project aims to use Machine Vision, unsupervised learning, and clustering t
 ## Stage 1: Proof of Concept
 
   
-I began by creating a simple case: a single image of a child's toy on a white background, decomposed into 100 sub-images. Using k-means clustering in[image_clustering.ipynb](image_clustering.ipynb), I implemented a pre-trained CNN called "VGG16" to extract key features from each image and group them based on similarity.
+I began by creating a simple case: a single image of a child's toy on a white background, decomposed into 100 sub-images. Using k-means clustering in [image_clustering.ipynb](image_clustering.ipynb), I implemented a pre-trained CNN called "VGG16" to extract key features from each image and group them based on similarity.
 
 The clusters where then translated into groups of files for visualisation - correctly showing that I had created a group of background images and a group with just the images of the toy.
 
   
 
-I refined the process in [image_clustering_innate_parallel.ipynb](https://chat.openai.com/c/image_clustering_innate_parallel.ipynb) by importing all images at once and passing them to the encoder in a batch, speeding up the test case.
+I refined the process in [image_clustering_innate_parallel.ipynb](image_clustering_innate_parallel.ipynb) by importing all images at once and passing them to the encoder in a batch, speeding up the test case.
 
   
 
@@ -40,7 +40,7 @@ The parallel scheme here is intended to maximise resource utilisation ensuring t
 
 ## Stage 4: Clustering with API
 
-With a set of around 750,000 realistic images now encoded, I implemented clustering based on Stage 2 in [hdb_clustering.py](hdb_clustering.py) and then [clustering_api.py](clustering_api.py), enabling it to run under uvicorn and RapidAPI. Users can tweak parameters, and further feature encodings can be added over time. An implementation for linux machines which are able to use [the Rapids.ai GPU based HDBSCAN](https://developer.nvidia.com/blog/faster-hdbscan-soft-clustering-with-rapids-cuml/) is [here](clustering_api_linux.py)
+With a set of around 750,000 realistic images now encoded, I implemented clustering based on Stage 2 in [hdb_clustering.py](hdb_clustering.py) and then [clustering_api.py](clustering_api.py), enabling it to run under uvicorn and RapidAPI. Users can tweak parameters, and further feature encodings can be added over time. An implementation for linux machines which are able to use [the Rapids.ai GPU based HDBSCAN](https://developer.nvidia.com/blog/faster-hdbscan-soft-clustering-with-rapids-cuml/) is [here.](clustering_api_linux.py)
   
 
 The CPU clustering implementation is set up so that the user submits jobs for background execution and can pull their results from a saved library once completed. Timing estimates are fed back for un-solved parameter sets. The linux implementation, being faster, has been amended to return either graphs of clustering outcomes or clustered sets of images for user inspection. 
@@ -49,7 +49,7 @@ With all of the above implemented I was able to select some parameters for the c
 
 ## Stage 5: Interactivity and Visualization
 
-In this stage the matplotlib static figures were replaced with mpld3 interactive javascript visualisaitons. The main changes were in the js used to understand and display the API responses - these are included as exemplars in the  [example websites](example_websites) folder. The drawback of this library is that all of the points are sent by the API as text encoded within the JSON response, while this can be compressed in transit it still results in large messages. The plotting then relies on client-side JSON processing to display all the points, which can be resource intensive and thus only small collections of points should be shown in this way.
+In this stage the matplotlib static figures were replaced with [mpld3 interactive javascript visualisaitons](https://mpld3.github.io/index.html). The main changes were in the js used to understand and display the API responses - these are included as exemplars in the  [example websites](example websites) folder. The drawback of this library is that all of the points are sent by the API as text encoded within the JSON response, while this can be compressed in transit it still results in large messages. The plotting then relies on client-side JSON processing to display all the points, which can be resource intensive and thus only small collections of points should be shown in this way.
 
 Some visualisation tweaks were also made to the API and displaying webpages, in order to better gain an understanding of the grouping process. These visualisations would be helpful in benchmarking the encoding and segregation performance of any future models.
 
@@ -57,7 +57,7 @@ Some visualisation tweaks were also made to the API and displaying webpages, in 
 
 In this phase I will be looking at the point at which clustering can be replaced by a more straightforward "nearest existing image" search implemented in FAISS. This would mean that new images can be classified without having to recluster the existing database. The downside is that we need to estimate how far away from the existing groups is "too far" for the new image to be a part of that group. We may also miss the formation of new groups on a new part of the graph, simply because we're looking at new images one at a time.
 
-Speed, convenience, and proximity metrics are investigated in [this notebook](FAISS.ipynb)
+Speed, convenience, and proximity metrics are investigated in [this notebook.](FAISS.ipynb)
 
 ## Stage 7: Putting FAISS into an API
 
