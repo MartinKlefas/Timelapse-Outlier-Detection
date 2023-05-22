@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Images</title>
+    <!-- Dropzone CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.css" />
+</head>
+<body>
+    <h1>Upload Images</h1>
+    <form action="/ImagesToGroupIDs" class="dropzone" id="myDropzone">
+        <div class="fallback">
+            <input name="file" type="file" multiple />
+        </div>
+    </form>
+
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Dropzone JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.js"></script>
+    <!-- Your custom script -->
+    <script src="upload.js"></script>
+
+    <h1>Groupings</h1>
+    <table id="responseTable">
+        <tr>
+            <th>Filename</th>
+            <th>Predicted Group</th>
+            <th>Distance</th>
+        </tr>
+    </table>
+</body>
+</html>
