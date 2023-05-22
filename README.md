@@ -7,7 +7,7 @@ This project aims to use Machine Vision, unsupervised learning, and clustering t
 ## Stage 1: Proof of Concept
 
   
-I began by creating a simple case: a single image of a child's toy on a white background, decomposed into 100 sub-images. Using k-means clustering in [image_clustering.ipynb](image_clustering.ipynb), I implemented a pre-trained CNN called "VGG16" to extract key features from each image and group them based on similarity.
+I began by creating a simple case: a single image of a child's toy on a white background, decomposed into 100 sub-images. Using k-means clustering in [image_clustering.ipynb](readme-images/image_clustering.ipynb), I implemented a pre-trained CNN called "VGG16" to extract key features from each image and group them based on similarity.
 
 The clusters where then translated into groups of files for visualisation - correctly showing that I had created a group of background images and a group with just the images of the toy.
 
@@ -21,7 +21,7 @@ I refined the process in [image_clustering_innate_parallel.ipynb](image_clusteri
 
 For real data, I don't know the number of clusters beforehand, so I used an [HDBSCAN](https://hdbscan.readthedocs.io/en/latest/basic_hdbscan.html) implementation in [hdbscan_clustering.ipynb](hdbscan_clustering.ipynb) Using the same feature extraction technique, the HDBSCAN produced comparable results on the test dataset, grouping background images into a cluster and leaving images with the toy in the "noise" group, as shown below:
 
-![clustered plot of encoded image segments](test_hdbscan.png)
+![clustered plot of encoded image segments](readme-images/test_hdbscan.png)
 
   
 
@@ -34,7 +34,7 @@ I implemented two approaches to handle large-scale test data:
     
 2.  **Parallel Workers:** I designed a parallel worker implementation to minimize downtime for any resource, which is still under development. The logic for this implementation is shown below:
 
-![Process flow diagram for the parallel scheme](Parallel_Flow.png)
+![Process flow diagram for the parallel scheme](readme-images/Parallel_Flow.png)
 
 The parallel scheme here is intended to maximise resource utilisation ensuring that the disk connection (red), CPU (green) and GPU (blue) are all idle for as little time as possible - no matter which part of the process ends up being the bottleneck. 
 
@@ -49,7 +49,7 @@ With all of the above implemented I was able to select some parameters for the c
 
 ## Stage 5: Interactivity and Visualization
 
-In this stage the matplotlib static figures were replaced with [mpld3 interactive javascript visualisaitons](https://mpld3.github.io/index.html). The main changes were in the js used to understand and display the API responses - these are included as exemplars in the  [example websites](example websites/readme.md) folder. The drawback of this library is that all of the points are sent by the API as text encoded within the JSON response, while this can be compressed in transit it still results in large messages. The plotting then relies on client-side JSON processing to display all the points, which can be resource intensive and thus only small collections of points should be shown in this way.
+In this stage the matplotlib static figures were replaced with [mpld3 interactive javascript visualisaitons](https://mpld3.github.io/index.html). The main changes were in the js used to understand and display the API responses - these are included as exemplars in the [example websites](example%20websites) folder. The drawback of this library is that all of the points are sent by the API as text encoded within the JSON response, while this can be compressed in transit it still results in large messages. The plotting then relies on client-side JSON processing to display all the points, which can be resource intensive and thus only small collections of points should be shown in this way.
 
 Some visualisation tweaks were also made to the API and displaying webpages, in order to better gain an understanding of the grouping process. These visualisations would be helpful in benchmarking the encoding and segregation performance of any future models.
 

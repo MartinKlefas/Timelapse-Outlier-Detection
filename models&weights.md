@@ -25,7 +25,7 @@ Under this paradigm, labeled examples of images are used to train a CNN from scr
 
 These models have been trained to recognize diverse image features. ImageNet, for example, includes a wide variety of subjects and scenes with complex hidden features such as hidden foxes and bunches of bananas: 
 
-![bananas](bananas.png) ![foxes](https://storage.googleapis.com/kaggle-competitions/kaggle/3333/media/kit_fox.JPG)
+![bananas](readme-images/bananas.png) ![foxes](readme-images/kit_fox.JPG)
 
 Although our real images aren't particularly similar to the training set, some are bound to resemble foxes more than others. Fine-tuning the pre-trained model would improve performance, but this requires segmentation and labeling of a portion of the real image set, one of the project's goals.
 
@@ -33,6 +33,6 @@ Although our real images aren't particularly similar to the training set, some a
 
 If cost were not a concern, or the benefits of finding outliers far exceeded training expenses, DINO would be the best option for training an image classifier. This might be the case for tasks like identifying bank robbers in CCTV footage or detecting inappropriate images in a commercial database.
 
-However, our test data consists of time-lapse footage from a domestic garden, where there is no monetary value in perfectlyidentifying all outlier images. Thus, using a pre-trained model will suffice. The code has been implemented in a way that allows for the easy integration of other models after training, so if a more valuable dataset emerges, only minor changes would be needed.
+However, our test data consists of time-lapse footage from a domestic garden, where there is no monetary value in perfectly identifying all outlier images. Thus, using a pre-trained model will suffice. The code has been implemented in a way that allows for the easy integration of other models after training, so if a more valuable dataset emerges, only minor changes would be needed.
 
 The initial embeddings and clustering have been performed using a [pre-trained VGG16 model](https://keras.io/api/applications/vgg/#vgg16-function). While it would be interesting to compare this to other models, the accuracy of the clustering itself is a secondary goal for this project. The primary aim is to learn the techniques and methodology behind outlier detection.
