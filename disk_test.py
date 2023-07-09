@@ -51,6 +51,7 @@ for drive_letter, disk_drive in drive_mappings.items():
 
 def get_drive_info(drive : str = "", Path : pathlib.Path = None):
     if Path :
+        Path = Path.resolve()
         drive = str(Path.drive)
 
     drive = drive.replace(":","")
